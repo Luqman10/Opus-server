@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+
+    <class name="com.samaritan.opus.model.ProfileAccount" table="profile_account" schema="opus">
+        
+        <id name="id" column="id" type="java.lang.Integer">
+            <generator class="identity"/>
+        </id>
+        
+        <property name="email">
+            <column name="email" sql-type="varchar(50)" length="50"/>
+        </property>
+        <property name="username">
+            <column name="username" sql-type="varchar(50)" length="50"/>
+        </property>
+        <property name="password">
+            <column name="password" sql-type="varchar(50)" length="50"/>
+        </property>
+        <property name="emailVerificationKey">
+            <column name="email_verification_key" sql-type="varchar(16)" length="16"/>
+        </property>
+        <property name="accountActive">
+            <column name="is_account_active" sql-type="tinyint(1)"/>
+        </property>
+        <property name="dateEmailVerificationKeyCreated">
+            <column name="date_email_verification_key_created" sql-type="bigint(20)"/>
+        </property>
+        <property name="dateAccountCreated">
+            <column name = "date_account_created" sql-type="bigint(20)"/>
+        </property>
+        <property name="emailVerified">
+            <column name="is_email_verified" sql-type="tinyint(1)"/>
+        </property>
+        <property name="passwordResetKey">
+            <column name="password_reset_key" sql-type="varchar(16)" length="16"/>
+        </property>
+        <property name="datePasswordResetKeyCreated">
+            <column name="date_password_reset_key_created" sql-type="bigint(20)"/>
+        </property>
+    </class>
+</hibernate-mapping>

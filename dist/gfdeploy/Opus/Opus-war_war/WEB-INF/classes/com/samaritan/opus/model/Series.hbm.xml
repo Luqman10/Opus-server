@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+
+<hibernate-mapping>
+    
+    <class name="com.samaritan.opus.model.Series" table="series" schema="opus">
+        
+        <id name="id" column="id" type="java.lang.Integer">
+            <generator class="identity"/>
+        </id>
+        
+        <property name="title" column = "title"/>
+        
+        <many-to-one name="videoProducer" column="producer" unique="true" cascade = "all"/>
+        
+        <many-to-one name="videoCategory" column="category" unique="true" cascade = "all"/>
+        
+        <property name="price" column = "price"/>
+            
+        <property name="posterImage" column = "poster_image"/>
+            
+        <property name="dateReleased" column = "date_released" />
+        
+        <property name="description" column = "description" />
+            
+    </class>
+    
+</hibernate-mapping>

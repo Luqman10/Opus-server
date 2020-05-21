@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+
+<hibernate-mapping>
+    
+    <class name="com.samaritan.opus.model.Album" table="album" schema="opus">
+        
+        <id name="id" column="id" type="java.lang.Integer">
+            <generator class="identity"/>
+        </id>
+        
+        <property name="name" column="name"/>
+        
+        <many-to-one name="artiste" column="artiste" unique="true" cascade = "all"/>
+        
+        <many-to-one name="genre" column="genre" unique="true" cascade = "all"/>
+        
+        <property name="price" column="price"/>
+        
+        <property name="albumCover" column="album_cover"/>
+        
+        <property name="sellAlbumOnly" column="sell_album_only"/>
+        
+        <property name="numberOfSongs" column="number_of_songs"/>
+        
+    </class>
+    
+</hibernate-mapping>
