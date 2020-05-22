@@ -33,9 +33,6 @@ public class Genre {
     @Column(name = "name", nullable = false, length = 20)
     private String name ;
     
-    @Expose(serialize = true, deserialize = true)
-    @Column(name = "description", nullable = false, length = 50)
-    private String description ;
 
     public Integer getId() {
         return id;
@@ -53,14 +50,6 @@ public class Genre {
         this.name = name;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-    
     
     @Override
     public boolean equals(Object o) {
@@ -68,13 +57,12 @@ public class Genre {
         if (o == null || getClass() != o.getClass()) return false;
         Genre that = (Genre) o;
         return Objects.equals(id, that.id) &&
-                Objects.equals(name, that.name) &&
-                Objects.equals(description, that.description) ;
+                Objects.equals(name, that.name) ;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id,name,description) ;
+        return Objects.hash(id,name) ;
     }
     
 }
