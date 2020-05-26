@@ -176,6 +176,140 @@ public class SongResource {
     }
     
     /**
+     * get a list of song recommendations for a user that is based on the user's previous downloads
+     * @param profileAccountId the user's id
+     * @return response
+     */
+    @Path("/recommendations")
+    @GET
+    @Produces("application/json")
+    public Response getSongRecommendations(@QueryParam("profileAccountId") int profileAccountId){
+        
+        //list of song recommendations to return
+        List<Song> listOfRecommendations ;
+        //find artiste id whose songs the user has downloaded most
+        int artisteDownloadedMostByUser = getArtisteDownloadedMostByUser(profileAccountId) ;
+        //find genre id of songs the user has downloaded most
+        int genreDownloadedMostByUser = getGenreDownloadedMostByUser(profileAccountId) ;
+        
+        //if the user has not made any downloads, depend on all downloads to suggest songs to user
+        if(artisteDownloadedMostByUser == -1 || genreDownloadedMostByUser == -1){
+            
+            //find artiste id whose songs have been downloaded most
+            int artisteDownloadedMostByAllUsers = getArtisteDownloadedMostByAllUsers() ;
+            //find genre id of songs that have been downloaded most
+            int genreDownloadedMostByAllUsers = getGenreDownloadedMostByAllUsers() ;
+            //use the artiste and genre downloaded most by all users to find recommendations for user
+            //in case there are no downloads in the system, then no recommendations will be made to the user
+            listOfRecommendations = getSongsThatMatchArtisteOrGenre(artisteDownloadedMostByAllUsers, genreDownloadedMostByAllUsers) ;
+            
+        }
+        //use artiste and genre to find recommendations for user
+        else
+            listOfRecommendations = getSongsThatMatchArtisteOrGenre(artisteDownloadedMostByUser, genreDownloadedMostByUser) ;
+        
+        //set details for each song in the list
+        listOfRecommendations = setDetailsForSongs(listOfRecommendations) ;
+        
+        //parse list of songs to JSON and set JSON as entity of response
+        Gson gson = new GsonBuilder()
+        .excludeFieldsWithoutExposeAnnotation()
+        .serializeNulls()
+        .create();
+        String jsonString = gson.toJson(listOfRecommendations) ;
+            
+        //send response with 200 code
+        Response.ResponseBuilder responseBuilder = Response.ok() ;
+        responseBuilder.entity(jsonString) ;
+        return responseBuilder.build() ;
+        
+    }
+    
+    /**
+     * get the id of the artiste whose songs the user has downloaded most
+     * @param profileAccountId the user's id
+     * @return the id of the artiste
+     */
+    private int getArtisteDownloadedMostByUser(int profileAccountId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query query = session.createQuery("SELECT sd, sd.song.artiste.id, count(*) FROM SongDownload sd JOIN FETCH sd.song WHERE sd.profileAccount.id = :profileAccountId GROUP BY sd.song.artiste.id ORDER BY count(*) DESC") ;
+        query.setParameter("profileAccountId", profileAccountId) ;
+        query.setMaxResults(1) ;
+        List resultSet = query.list() ;
+        session.close() ;
+        //if there is no result set, it means the user hasn't made any downloads so return -1
+        if(resultSet.isEmpty())
+            return -1 ;
+        //else return the artiste id field of the first tuple since the result set has been sorted in desc order
+        Object[] tupleFields = (Object[])resultSet.get(0) ;
+        return (int)tupleFields[1] ;
+    }
+    
+    /**
+     * get the id of the artiste whose songs have been downloaded most by all users
+     * @return the id of the artiste
+     */
+    private int getArtisteDownloadedMostByAllUsers(){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query query = session.createQuery("SELECT sd, sd.song.artiste.id, count(*) FROM SongDownload sd JOIN FETCH sd.song GROUP BY sd.song.artiste.id ORDER BY count(*) DESC") ;
+        query.setMaxResults(1) ;
+        List resultSet = query.list() ;
+        session.close() ;
+        //if there is no result set, it means there are no song downloads so return -1
+        if(resultSet.isEmpty())
+            return -1 ;
+        //else return the artiste id field of the first tuple since the result set has been sorted in desc order
+        Object[] tupleFields = (Object[])resultSet.get(0) ;
+        return (int)tupleFields[1] ;
+    }
+    
+    /**
+     * get the id of the genre whose songs the user has downloaded most
+     * @param profileAccountId the user's id
+     * @return the id of the genre
+     */
+    private int getGenreDownloadedMostByUser(int profileAccountId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query query = session.createQuery("SELECT sd, sd.song.genre.id, count(*) FROM SongDownload sd JOIN FETCH sd.song WHERE sd.profileAccount.id = :profileAccountId GROUP BY sd.song.genre.id ORDER BY count(*) DESC") ;
+        query.setParameter("profileAccountId", profileAccountId) ;
+        query.setMaxResults(1) ;
+        List resultSet = query.list() ;
+        session.close() ;
+        //if there is no result set, it means the user hasn't made any downloads so return -1
+        if(resultSet.isEmpty())
+            return -1 ;
+        //else return the genre id field of the first tuple since the result set has been sorted in desc order
+        Object[] tupleFields = (Object[])resultSet.get(0) ;
+        return (int)tupleFields[1] ;
+    }
+    
+    /**
+     * get the id of the genre whose songs have been downloaded most by all users
+     * @return the id of the genre
+     */
+    private int getGenreDownloadedMostByAllUsers(){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query query = session.createQuery("SELECT sd, sd.song.genre.id, count(*) FROM SongDownload sd JOIN FETCH sd.song GROUP BY sd.song.genre.id ORDER BY count(*) DESC") ;
+        query.setMaxResults(1) ;
+        List resultSet = query.list() ;
+        session.close() ;
+        //if there is no result set, it means there are no downloads so return -1
+        if(resultSet.isEmpty())
+            return -1 ;
+        //else return the genre id field of the first tuple since the result set has been sorted in desc order
+        Object[] tupleFields = (Object[])resultSet.get(0) ;
+        return (int)tupleFields[1] ;
+    }
+    
+    /**
      * set details (song sold as single, poster image) for each song in the passed list
      * @param listOfSongs
      * @return listOfSongs
@@ -292,6 +426,24 @@ public class SongResource {
             session.close() ;
             return null ;
         }
+    }
+    
+    /**
+     * get a list of songs whose artiste / genre match the args passed
+     * @param artisteId the artiste id
+     * @param genreId the genre id 
+     * @return the result set
+     */
+    private List<Song> getSongsThatMatchArtisteOrGenre(int artisteId, int genreId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query<Song> query = session.createQuery("FROM Song s JOIN FETCH s.artiste JOIN FETCH s.genre LEFT JOIN FETCH s.album WHERE s.artiste.id = :artisteId OR s.genre.id = :genreId", Song.class) ;
+        query.setParameter("artisteId", artisteId) ;
+        query.setParameter("genreId", genreId) ;
+        List<Song> listOfSongs = query.getResultList() ;
+        session.close() ;
+        return listOfSongs ;
     }
     
 }

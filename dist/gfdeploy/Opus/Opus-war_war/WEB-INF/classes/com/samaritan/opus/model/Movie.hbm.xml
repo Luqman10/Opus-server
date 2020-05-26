@@ -21,6 +21,8 @@
         <property name="price" column = "price"/>
             
         <property name="posterImage" column = "poster_image"/>
+        
+        <property name="sample" column="sample"/>
             
         <property name="dateReleased" column = "date_released" />
         
