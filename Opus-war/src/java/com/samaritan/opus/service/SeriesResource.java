@@ -61,27 +61,7 @@ public class SeriesResource {
                     query + "\'") ;
                     
         //set the base64 representation of each series' poster image
-        for(Series series: listOfSeries){
-                
-            try{
-                    
-                //generate the Base64 string of each series' poster image and set it to the
-                //posterImage field of each series object
-                String posterImage = series.getPosterImage() ;
-                if(posterImage != null){
-
-                    File file = new File(posterImage) ;
-                    String base64 = Base64Util.convertFileToBase64(file) ;
-                    series.setPosterImage(base64) ;
-                         
-                }
-            }
-            catch(IOException ex){
-                    
-                logger.log(Level.SEVERE, "An IO exception occured when converting the image file "
-                    + "to base64") ;
-            }
-        }
+        listOfSeries = setPosterImageForSeries(listOfSeries) ;
             
         //if a match was found, send status code 200
         //parse list of docs to JSON and set JSON as entity of response
@@ -129,6 +109,160 @@ public class SeriesResource {
     }
     
     /**
+     * get a list of series recommendations based on a user's series download history
+     * @param profileAccountId the user's profile account id
+     * @return 
+     */
+    public List<Series> getSeriesRecommendations(ServletContext servletContext, int profileAccountId){
+        
+        //init the servletContext field with the one coming from the caller
+        this.servletContext = servletContext ;
+        //list of series recommendations to return
+        List<Series> listOfSeriesRecommendations ;
+        //find producer id whose series the user has downloaded most
+        int producerDownloadedMostByUser = getProducerDownloadedMostByUser(profileAccountId) ;
+        //find category id of series the user has downloaded most
+        int categoryDownloadedMostByUser = getCategoryDownloadedMostByUser(profileAccountId) ;
+        
+        //if the user has not made any downloads, depend on all downloads to suggest series to user
+        if(producerDownloadedMostByUser == -1 || categoryDownloadedMostByUser == -1){
+            
+            //find producer id whose series have been downloaded most
+            int producerDownloadedMostByAllUsers = getProducerDownloadedMostByAllUsers() ;
+            //find category id of series that have been downloaded most
+            int categoryDownloadedMostByAllUsers = getCategoryDownloadedMostByAllUsers() ;
+            //use the producer and category downloaded most by all users to find recommendations for user
+            //in case there are no downloads in the system, then no recommendations will be made to the user
+            listOfSeriesRecommendations = getSeriesThatMatchProducerOrCategory(producerDownloadedMostByAllUsers, categoryDownloadedMostByAllUsers) ;
+            
+        }
+        //use producer and category to find recommendations for user
+        else
+            listOfSeriesRecommendations = getSeriesThatMatchProducerOrCategory(producerDownloadedMostByUser, categoryDownloadedMostByUser) ;
+        
+        //set details for each series in the list
+        listOfSeriesRecommendations = setPosterImageForSeries(listOfSeriesRecommendations) ;
+        
+        return listOfSeriesRecommendations ;
+    }
+    
+    /**
+     * get the id of the producer whose series the user has downloaded most
+     * @param profileAccountId the user's id
+     * @return the id of the producer
+     */
+    private int getProducerDownloadedMostByUser(int profileAccountId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query query = session.createQuery("SELECT sd, sd.series.videoProducer.id, count(*) FROM SeriesDownload sd JOIN FETCH sd.series WHERE sd.profileAccount.id = :profileAccountId GROUP BY sd.series.videoProducer.id ORDER BY count(*) DESC") ;
+        query.setParameter("profileAccountId", profileAccountId) ;
+        query.setMaxResults(1) ;
+        List resultSet = query.list() ;
+        session.close() ;
+        //if there is no result set, it means the user hasn't made any downloads so return -1
+        if(resultSet.isEmpty())
+            return -1 ;
+        //else return the producer id field of the first tuple since the result set has been sorted in desc order
+        Object[] tupleFields = (Object[])resultSet.get(0) ;
+        return (int)tupleFields[1] ;
+    }
+    
+    /**
+     * get the id of the category whose series the user has downloaded most
+     * @param profileAccountId the user's id
+     * @return the id of the category
+     */
+    private int getCategoryDownloadedMostByUser(int profileAccountId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query query = session.createQuery("SELECT sd, sd.series.videoCategory.id, count(*) FROM SeriesDownload sd JOIN FETCH sd.series WHERE sd.profileAccount.id = :profileAccountId GROUP BY sd.series.videoCategory.id ORDER BY count(*) DESC") ;
+        query.setParameter("profileAccountId", profileAccountId) ;
+        query.setMaxResults(1) ;
+        List resultSet = query.list() ;
+        session.close() ;
+        //if there is no result set, it means the user hasn't made any downloads so return -1
+        if(resultSet.isEmpty())
+            return -1 ;
+        //else return the category id field of the first tuple since the result set has been sorted in desc order
+        Object[] tupleFields = (Object[])resultSet.get(0) ;
+        return (int)tupleFields[1] ;
+    }
+    
+    /**
+     * get the id of the producer whose series has been downloaded most by all users
+     * @param profileAccountId the user's id
+     * @return the id of the producer
+     */
+    private int getProducerDownloadedMostByAllUsers(){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query query = session.createQuery("SELECT sd, sd.series.videoProducer.id, count(*) FROM SeriesDownload sd JOIN FETCH sd.series GROUP BY sd.series.videoProducer.id ORDER BY count(*) DESC") ;
+        query.setMaxResults(1) ;
+        List resultSet = query.list() ;
+        session.close() ;
+        //if there is no result set, it means there are no downloads so return -1
+        if(resultSet.isEmpty())
+            return -1 ;
+        //else return the producer id field of the first tuple since the result set has been sorted in desc order
+        Object[] tupleFields = (Object[])resultSet.get(0) ;
+        return (int)tupleFields[1] ;
+    }
+    
+    /**
+     * get the id of the category whose series has been downloaded most by all users
+     * @param profileAccountId the user's id
+     * @return the id of the category
+     */
+    private int getCategoryDownloadedMostByAllUsers(){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query query = session.createQuery("SELECT sd, sd.series.videoCategory.id, count(*) FROM SeriesDownload sd JOIN FETCH sd.series GROUP BY sd.series.videoCategory.id ORDER BY count(*) DESC") ;
+        query.setMaxResults(1) ;
+        List resultSet = query.list() ;
+        session.close() ;
+        //if there is no result set, it means there are no downloads so return -1
+        if(resultSet.isEmpty())
+            return -1 ;
+        //else return the category id field of the first tuple since the result set has been sorted in desc order
+        Object[] tupleFields = (Object[])resultSet.get(0) ;
+        return (int)tupleFields[1] ;
+    }
+    
+    /**
+     * set the base 64 representation of each series poster image
+     */
+    private List<Series> setPosterImageForSeries(List<Series> listOfSeries){
+        
+        for(Series series: listOfSeries){
+                
+            try{
+                    
+                //generate the Base64 string of each series' poster image and set it to the
+                //posterImage field of each series object
+                String posterImage = series.getPosterImage() ;
+                if(posterImage != null){
+
+                    File file = new File(posterImage) ;
+                    String base64 = Base64Util.convertFileToBase64(file) ;
+                    series.setPosterImage(base64) ;
+                         
+                }
+            }
+            catch(IOException ex){
+                    
+                logger.log(Level.SEVERE, "An IO exception occured when converting the image file "
+                    + "to base64") ;
+            }
+        }
+        
+        return listOfSeries ;
+    }
+    
+    /**
      * select the series from the DB with the given id
      * @param id
      * @return the series
@@ -171,5 +305,23 @@ public class SeriesResource {
         return listOfSeries ;
     }
      
+    
+    /**
+     * get a list of series whose producer / category match the args passed
+     * @param producerId the producer id
+     * @param categoryId the category id 
+     * @return the result set
+     */
+    private List<Series> getSeriesThatMatchProducerOrCategory(int producerId, int categoryId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query<Series> query = session.createQuery("FROM Series s JOIN FETCH s.videoProducer JOIN FETCH s.videoCategory WHERE s.videoProducer.id = :producerId OR s.videoCategory.id = :categoryId", Series.class) ;
+        query.setParameter("producerId", producerId) ;
+        query.setParameter("categoryId", categoryId) ;
+        List<Series> listOfSeries = query.getResultList() ;
+        session.close() ;
+        return listOfSeries ;
+    }
     
 }

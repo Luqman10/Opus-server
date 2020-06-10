@@ -10,6 +10,7 @@ import com.samaritan.opus.service.PaymentAccountResource;
 import com.samaritan.opus.service.ProfileAccountResource;
 import com.samaritan.opus.service.SongResource;
 import com.samaritan.opus.service.SeriesResource ;
+import com.samaritan.opus.service.VideoService;
 import com.samaritan.opus.util.HibernateUtil ;
 
 import javax.ws.rs.ApplicationPath;
@@ -44,6 +45,7 @@ public class OpusApplication extends Application{
         hashSet.add(MovieResource.class) ;
         hashSet.add(DocumentaryResource.class) ;
         hashSet.add(SeriesResource.class) ;
+        hashSet.add(VideoService.class) ;
         return hashSet ;
     }
     

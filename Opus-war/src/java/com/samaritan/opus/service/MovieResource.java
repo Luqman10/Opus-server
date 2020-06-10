@@ -62,27 +62,7 @@ public class MovieResource {
                     query + "\'") ;
             
         //set the base64 representation of each movie's poster image
-        for(Movie movie: listOfMovies){
-                
-            try{
-                    
-                //generate the Base64 string of each movie's poster image and set it to the
-                //posterImage field of each movie object
-                String posterImage = movie.getPosterImage() ;
-                if(posterImage != null){
-
-                    File file = new File(posterImage) ;
-                    String base64 = Base64Util.convertFileToBase64(file) ;
-                    movie.setPosterImage(base64) ;
-                         
-                }
-            }
-            catch(IOException ex){
-                    
-                logger.log(Level.SEVERE, "An IO exception occured when converting the image file "
-                            + "to base64") ;
-            }
-        }
+        listOfMovies = setPosterImageForMovies(listOfMovies) ;
             
         //send status code 200
         //parse list of movies to JSON and set JSON as entity of response
@@ -130,6 +110,161 @@ public class MovieResource {
     }
     
     /**
+     * set the base 64 representation of each movie in the list
+     */
+    private List<Movie> setPosterImageForMovies(List<Movie> listOfMovies){
+        
+        for(Movie movie: listOfMovies){
+                
+            try{
+                    
+                //generate the Base64 string of each movie's poster image and set it to the
+                //posterImage field of each movie object
+                String posterImage = movie.getPosterImage() ;
+                if(posterImage != null){
+
+                    File file = new File(posterImage) ;
+                    String base64 = Base64Util.convertFileToBase64(file) ;
+                    movie.setPosterImage(base64) ;
+                         
+                }
+            }
+            catch(IOException ex){
+                    
+                logger.log(Level.SEVERE, "An IO exception occured when converting the image file "
+                            + "to base64") ;
+            }
+        }
+        
+        return listOfMovies ;
+    }
+    
+    /**
+     * get a list of movie recommendations based on a user's movie download history
+     * @param profileAccountId the user's profile account id
+     * @return 
+     */
+    public List<Movie> getMovieRecommendations(ServletContext servletContext, int profileAccountId){
+        
+        //init the servletContext field with the one coming from the caller
+        this.servletContext = servletContext ;
+        //list of movie recommendations to return
+        List<Movie> listOfMovieRecommendations ;
+        //find producer id whose movies the user has downloaded most
+        int producerDownloadedMostByUser = getProducerDownloadedMostByUser(profileAccountId) ;
+        //find category id of movies the user has downloaded most
+        int categoryDownloadedMostByUser = getCategoryDownloadedMostByUser(profileAccountId) ;
+        
+        //if the user has not made any downloads, depend on all downloads to suggest movies to user
+        if(producerDownloadedMostByUser == -1 || categoryDownloadedMostByUser == -1){
+            
+            //find producer id whose movies have been downloaded most
+            int producerDownloadedMostByAllUsers = getProducerDownloadedMostByAllUsers() ;
+            //find category id of movies that have been downloaded most
+            int categoryDownloadedMostByAllUsers = getCategoryDownloadedMostByAllUsers() ;
+            //use the producer and category downloaded most by all users to find recommendations for user
+            //in case there are no downloads in the system, then no recommendations will be made to the user
+            listOfMovieRecommendations = getMoviesThatMatchProducerOrCategory(producerDownloadedMostByAllUsers, categoryDownloadedMostByAllUsers) ;
+            
+        }
+        //use producer and category to find recommendations for user
+        else
+            listOfMovieRecommendations = getMoviesThatMatchProducerOrCategory(producerDownloadedMostByUser, categoryDownloadedMostByUser) ;
+        
+        //set details for each movie in the list
+        listOfMovieRecommendations = setPosterImageForMovies(listOfMovieRecommendations) ;
+        
+        return listOfMovieRecommendations ;
+    }
+    
+    /**
+     * get the id of the producer whose movies the user has downloaded most
+     * @param profileAccountId the user's id
+     * @return the id of the producer
+     */
+    private int getProducerDownloadedMostByUser(int profileAccountId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query query = session.createQuery("SELECT md, md.movie.videoProducer.id, count(*) FROM MovieDownload md JOIN FETCH md.movie WHERE md.profileAccount.id = :profileAccountId GROUP BY md.movie.videoProducer.id ORDER BY count(*) DESC") ;
+        query.setParameter("profileAccountId", profileAccountId) ;
+        query.setMaxResults(1) ;
+        List resultSet = query.list() ;
+        session.close() ;
+        //if there is no result set, it means the user hasn't made any downloads so return -1
+        if(resultSet.isEmpty())
+            return -1 ;
+        //else return the producer id field of the first tuple since the result set has been sorted in desc order
+        Object[] tupleFields = (Object[])resultSet.get(0) ;
+        return (int)tupleFields[1] ;
+    }
+    
+    /**
+     * get the id of the producer whose movies has been downloaded most by all users
+     * @param profileAccountId the user's id
+     * @return the id of the producer
+     */
+    private int getProducerDownloadedMostByAllUsers(){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query query = session.createQuery("SELECT md, md.movie.videoProducer.id, count(*) FROM MovieDownload md JOIN FETCH md.movie GROUP BY md.movie.videoProducer.id ORDER BY count(*) DESC") ;
+        query.setMaxResults(1) ;
+        List resultSet = query.list() ;
+        session.close() ;
+        //if there is no result set, it means there are no downloads so return -1
+        if(resultSet.isEmpty())
+            return -1 ;
+        //else return the producer id field of the first tuple since the result set has been sorted in desc order
+        Object[] tupleFields = (Object[])resultSet.get(0) ;
+        return (int)tupleFields[1] ;
+    }
+    
+    /**
+     * get the id of the category whose movies the user has downloaded most
+     * @param profileAccountId the user's id
+     * @return the id of the category
+     */
+    private int getCategoryDownloadedMostByUser(int profileAccountId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query query = session.createQuery("SELECT md, md.movie.videoCategory.id, count(*) FROM MovieDownload md JOIN FETCH md.movie WHERE md.profileAccount.id = :profileAccountId GROUP BY md.movie.videoCategory.id ORDER BY count(*) DESC") ;
+        query.setParameter("profileAccountId", profileAccountId) ;
+        query.setMaxResults(1) ;
+        List resultSet = query.list() ;
+        session.close() ;
+        //if there is no result set, it means the user hasn't made any downloads so return -1
+        if(resultSet.isEmpty())
+            return -1 ;
+        //else return the category id field of the first tuple since the result set has been sorted in desc order
+        Object[] tupleFields = (Object[])resultSet.get(0) ;
+        return (int)tupleFields[1] ;
+    }
+    
+    /**
+     * get the id of the category whose movies has been downloaded most by all users
+     * @param profileAccountId the user's id
+     * @return the id of the category
+     */
+    private int getCategoryDownloadedMostByAllUsers(){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query query = session.createQuery("SELECT md, md.movie.videoCategory.id, count(*) FROM MovieDownload md JOIN FETCH md.movie GROUP BY md.movie.videoCategory.id ORDER BY count(*) DESC") ;
+        query.setMaxResults(1) ;
+        List resultSet = query.list() ;
+        session.close() ;
+        //if there is no result set, it means there are no downloads so return -1
+        if(resultSet.isEmpty())
+            return -1 ;
+        //else return the category id field of the first tuple since the result set has been sorted in desc order
+        Object[] tupleFields = (Object[])resultSet.get(0) ;
+        return (int)tupleFields[1] ;
+    }
+    
+    
+    /**
      * select the movie from the DB with the given id
      * @param id
      * @return the movie
@@ -166,6 +301,24 @@ public class MovieResource {
         Query<Movie> query = session.createQuery("FROM Movie m JOIN FETCH m.videoProducer JOIN FETCH m.videoCategory WHERE title LIKE :title", Movie.class) ;
         queryString = "%" + queryString + "%" ;
         query.setParameter("title", queryString) ;
+        List<Movie> listOfMovies = query.getResultList() ;
+        session.close() ;
+        return listOfMovies ;
+    }
+    
+    /**
+     * get a list of movies whose producer / category match the args passed
+     * @param producerId the producer id
+     * @param categoryId the category id 
+     * @return the result set
+     */
+    private List<Movie> getMoviesThatMatchProducerOrCategory(int producerId, int categoryId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query<Movie> query = session.createQuery("FROM Movie m JOIN FETCH m.videoProducer JOIN FETCH m.videoCategory WHERE m.videoProducer.id = :producerId OR m.videoCategory.id = :categoryId", Movie.class) ;
+        query.setParameter("producerId", producerId) ;
+        query.setParameter("categoryId", categoryId) ;
         List<Movie> listOfMovies = query.getResultList() ;
         session.close() ;
         return listOfMovies ;

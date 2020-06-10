@@ -41,5 +41,13 @@
         <mapping resource="com/samaritan/opus/model/Series.hbm.xml"/>
         <mapping class="com.samaritan.opus.model.SongDownload"/>
         <mapping resource="com/samaritan/opus/model/SongDownload.hbm.xml"/>
+        <mapping class="com.samaritan.opus.model.MusicVideoDownload"/>
+        <mapping resource="com/samaritan/opus/model/MusicVideoDownload.hbm.xml"/>
+        <mapping class="com.samaritan.opus.model.MovieDownload"/>
+        <mapping resource="com/samaritan/opus/model/MovieDownload.hbm.xml"/>
+        <mapping class="com.samaritan.opus.model.SeriesDownload"/>
+        <mapping resource="com/samaritan/opus/model/SeriesDownload.hbm.xml"/>
+        <mapping class="com.samaritan.opus.model.DocumentaryDownload"/>
+        <mapping resource="com/samaritan/opus/model/DocumentaryDownload.hbm.xml"/>
     </session-factory>
 </hibernate-configuration>

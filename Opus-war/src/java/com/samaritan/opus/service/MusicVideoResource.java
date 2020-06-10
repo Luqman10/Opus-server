@@ -40,7 +40,7 @@ public class MusicVideoResource {
     protected ServletContext servletContext ;
 
     //send messages to the log
-    Logger logger = Logger.getLogger("com.samaritan.opus.service.MusicVideoResource") ;
+    static final Logger LOGGER = Logger.getLogger("com.samaritan.opus.service.MusicVideoResource") ;
     
     
     /**
@@ -58,34 +58,11 @@ public class MusicVideoResource {
         //get the list of music videos that match query from DB
         List<MusicVideo> listOfMusicVideos = selectMusicVideosFromDBMatchingTitle(query) ;
             
-        logger.log(Level.INFO, listOfMusicVideos.size() + " music videos found matching \'" + 
+        LOGGER.log(Level.INFO, listOfMusicVideos.size() + " music videos found matching \'" + 
             query + "\'") ;
-            
-            
-        //for each music video, set the base64 of the poster image
-        for(MusicVideo musicVideo : listOfMusicVideos){
-
-            try{
-
-                //generate the Base64 string of each music video's poster image and set it to the
-                //posterImage field of each music video object
-                String posterImage = musicVideo.getPosterImage() ;
-                if(posterImage != null){
-
-                    File file = new File(posterImage) ;
-                    String base64 = Base64Util.convertFileToBase64(file) ;
-                    musicVideo.setPosterImage(base64) ;
-
-                }
-
-            }
-            catch(IOException ex){
-
-                logger.log(Level.SEVERE, "An IO exception occured when converting the image file "
-                                + "to base64") ;
-            }
-        }
-            
+               
+        //set poster image for each music video
+        listOfMusicVideos = setPosterImageForMusicVideos(listOfMusicVideos) ;
             
         //if a match was found, send status code 200
         //parse list of music videos to JSON and set JSON as entity of response
@@ -114,31 +91,10 @@ public class MusicVideoResource {
         List<MusicVideo> listOfMusicVideos = selectMusicVideosFromDBOwnedByArtiste(artisteId) ;
           
         //log the number of music videos artiste owns
-        logger.log(Level.INFO, String.format("%s has %d music videos", "Artiste with ID: " + artisteId,listOfMusicVideos.size())) ;
+        LOGGER.log(Level.INFO, String.format("%s has %d music videos", "Artiste with ID: " + artisteId,listOfMusicVideos.size())) ;
         
-        //for each music video, set the base64 of the poster image
-        for(MusicVideo musicVideo : listOfMusicVideos){
-
-            try{
-
-                //generate the Base64 string of each music video's poster image and set it to the
-                //posterImage field of each music video object
-                String posterImage = musicVideo.getPosterImage() ;
-                if(posterImage != null){
-
-                    File file = new File(posterImage) ;
-                    String base64 = Base64Util.convertFileToBase64(file) ;
-                    musicVideo.setPosterImage(base64) ;
-
-                }
-
-            }
-            catch(IOException ex){
-
-                logger.log(Level.SEVERE, "An IO exception occured when converting the image file "
-                                + "to base64") ;
-            }
-        }
+        //set poster image for each music video
+        listOfMusicVideos = setPosterImageForMusicVideos(listOfMusicVideos) ;
          
         //if a match was found, send status code 200
         //parse list of music videos to JSON and set JSON as entity of response
@@ -184,6 +140,162 @@ public class MusicVideoResource {
         //return null if any of the above conditions fail
         return null ;
         
+    }
+    
+    /**
+     * set the base 64 representation of each music video's poster image
+     * @param listOfMusicVideos the list of music videos
+     * @return 
+     */
+    private List<MusicVideo> setPosterImageForMusicVideos(List<MusicVideo> listOfMusicVideos){
+        
+        //for each music video, set the base64 of the poster image
+        for(MusicVideo musicVideo : listOfMusicVideos){
+
+            try{
+
+                //generate the Base64 string of each music video's poster image and set it to the
+                //posterImage field of each music video object
+                String posterImage = musicVideo.getPosterImage() ;
+                if(posterImage != null){
+
+                    File file = new File(posterImage) ;
+                    String base64 = Base64Util.convertFileToBase64(file) ;
+                    musicVideo.setPosterImage(base64) ;
+
+                }
+
+            }
+            catch(IOException ex){
+
+                LOGGER.log(Level.SEVERE, "An IO exception occured when converting the image file "
+                                + "to base64") ;
+            }
+        }
+        
+        return listOfMusicVideos ;
+    }
+    
+    /**
+     * get a list of music video recommendations based on a user's music video download history
+     * @param profileAccountId the user's profile account id
+     * @return 
+     */
+    public List<MusicVideo> getMusicVideoRecommendations(ServletContext servletContext, int profileAccountId){
+        
+        //init the servletContext field with the one coming from the caller
+        this.servletContext = servletContext ;
+        //list of music video recommendations to return
+        List<MusicVideo> listOfMusicVideoRecommendations ;
+        //find artiste id whose music videos the user has downloaded most
+        int artisteDownloadedMostByUser = getArtisteDownloadedMostByUser(profileAccountId) ;
+        //find genre id of music videos the user has downloaded most
+        int genreDownloadedMostByUser = getGenreDownloadedMostByUser(profileAccountId) ;
+        
+        //if the user has not made any downloads, depend on all downloads to suggest music videos to user
+        if(artisteDownloadedMostByUser == -1 || genreDownloadedMostByUser == -1){
+            
+            //find artiste id whose music videos have been downloaded most
+            int artisteDownloadedMostByAllUsers = getArtisteDownloadedMostByAllUsers() ;
+            //find genre id of music videos that have been downloaded most
+            int genreDownloadedMostByAllUsers = getGenreDownloadedMostByAllUsers() ;
+            //use the artiste and genre downloaded most by all users to find recommendations for user
+            //in case there are no downloads in the system, then no recommendations will be made to the user
+            listOfMusicVideoRecommendations = getMusicVideosThatMatchArtisteOrGenre(artisteDownloadedMostByAllUsers, genreDownloadedMostByAllUsers) ;
+            
+        }
+        //use artiste and genre to find recommendations for user
+        else
+            listOfMusicVideoRecommendations = getMusicVideosThatMatchArtisteOrGenre(artisteDownloadedMostByUser, genreDownloadedMostByUser) ;
+        
+        //set details for each music video in the list
+        listOfMusicVideoRecommendations = setPosterImageForMusicVideos(listOfMusicVideoRecommendations) ;
+        
+        return listOfMusicVideoRecommendations ;
+    }
+    
+    /**
+     * get the id of the artiste whose music videos the user has downloaded most
+     * @param profileAccountId the user's id
+     * @return the id of the artiste
+     */
+    private int getArtisteDownloadedMostByUser(int profileAccountId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query query = session.createQuery("SELECT mvd, mvd.musicVideo.artiste.id, count(*) FROM MusicVideoDownload mvd JOIN FETCH mvd.musicVideo WHERE mvd.profileAccount.id = :profileAccountId GROUP BY mvd.musicVideo.artiste.id ORDER BY count(*) DESC") ;
+        query.setParameter("profileAccountId", profileAccountId) ;
+        query.setMaxResults(1) ;
+        List resultSet = query.list() ;
+        session.close() ;
+        //if there is no result set, it means the user hasn't made any downloads so return -1
+        if(resultSet.isEmpty())
+            return -1 ;
+        //else return the artiste id field of the first tuple since the result set has been sorted in desc order
+        Object[] tupleFields = (Object[])resultSet.get(0) ;
+        return (int)tupleFields[1] ;
+    }
+    
+    /**
+     * get the id of the artiste whose music videos have been downloaded most by all users
+     * @return the id of the artiste
+     */
+    private int getArtisteDownloadedMostByAllUsers(){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query query = session.createQuery("SELECT mvd, mvd.musicVideo.artiste.id, count(*) FROM MusicVideoDownload mvd JOIN FETCH mvd.musicVideo GROUP BY mvd.musicVideo.artiste.id ORDER BY count(*) DESC") ;
+        query.setMaxResults(1) ;
+        List resultSet = query.list() ;
+        session.close() ;
+        //if there is no result set, it means there are no downloads so return -1
+        if(resultSet.isEmpty())
+            return -1 ;
+        //else return the artiste id field of the first tuple since the result set has been sorted in desc order
+        Object[] tupleFields = (Object[])resultSet.get(0) ;
+        return (int)tupleFields[1] ;
+    }
+    
+    /**
+     * get the id of the genre whose music videos the user has downloaded most
+     * @param profileAccountId the user's id
+     * @return the id of the genre
+     */
+    private int getGenreDownloadedMostByUser(int profileAccountId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query query = session.createQuery("SELECT mvd, mvd.musicVideo.genre.id, count(*) FROM MusicVideoDownload mvd JOIN FETCH mvd.musicVideo WHERE mvd.profileAccount.id = :profileAccountId GROUP BY mvd.musicVideo.genre.id ORDER BY count(*) DESC") ;
+        query.setParameter("profileAccountId", profileAccountId) ;
+        query.setMaxResults(1) ;
+        List resultSet = query.list() ;
+        session.close() ;
+        //if there is no result set, it means the user hasn't made any downloads so return -1
+        if(resultSet.isEmpty())
+            return -1 ;
+        //else return the genre id field of the first tuple since the result set has been sorted in desc order
+        Object[] tupleFields = (Object[])resultSet.get(0) ;
+        return (int)tupleFields[1] ;
+    }
+    
+    /**
+     * get the id of the genre whose music videos have been downloaded most by all users
+     * @return the id of the genre
+     */
+    private int getGenreDownloadedMostByAllUsers(){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query query = session.createQuery("SELECT mvd, mvd.musicVideo.genre.id, count(*) FROM MusicVideoDownload mvd JOIN FETCH mvd.musicVideo GROUP BY mvd.musicVideo.genre.id ORDER BY count(*) DESC") ;
+        query.setMaxResults(1) ;
+        List resultSet = query.list() ;
+        session.close() ;
+        //if there is no result set, it means there are no downloads so return -1
+        if(resultSet.isEmpty())
+            return -1 ;
+        //else return the genre id field of the first tuple since the result set has been sorted in desc order
+        Object[] tupleFields = (Object[])resultSet.get(0) ;
+        return (int)tupleFields[1] ;
     }
     
     /**
@@ -240,6 +352,24 @@ public class MusicVideoResource {
         Session session = sessionFactory.openSession() ;
         Query<MusicVideo> query = session.createQuery("FROM MusicVideo mv JOIN FETCH mv.artiste JOIN FETCH mv.genre WHERE mv.artiste.id=:artisteId", MusicVideo.class) ;
         query.setParameter("artisteId", artisteId) ;
+        List<MusicVideo> listOfMusicVideos = query.getResultList() ;
+        session.close() ;
+        return listOfMusicVideos ;
+    }
+    
+    /**
+     * get a list of music videos whose artiste / genre match the args passed
+     * @param artisteId the artiste id
+     * @param genreId the genre id 
+     * @return the result set
+     */
+    private List<MusicVideo> getMusicVideosThatMatchArtisteOrGenre(int artisteId, int genreId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query<MusicVideo> query = session.createQuery("FROM MusicVideo mv JOIN FETCH mv.artiste JOIN FETCH mv.genre WHERE mv.artiste.id = :artisteId OR mv.genre.id = :genreId", MusicVideo.class) ;
+        query.setParameter("artisteId", artisteId) ;
+        query.setParameter("genreId", genreId) ;
         List<MusicVideo> listOfMusicVideos = query.getResultList() ;
         session.close() ;
         return listOfMusicVideos ;

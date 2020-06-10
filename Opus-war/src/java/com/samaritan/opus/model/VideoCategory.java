@@ -34,17 +34,12 @@ public class VideoCategory implements Serializable {
     @Column(name = "name", nullable = false, length = 20)
     private String name ;
     
-    @Expose(serialize = true, deserialize = true)
-    @Column(name = "description", nullable = false, length = 50)
-    private String description ;
-    
     //constructors
     public VideoCategory(){}
     
-    public VideoCategory(String name, String description){
+    public VideoCategory(String name){
         
         this.name = name ;
-        this.description = description ;
     }
     
     //getters and setters
@@ -63,15 +58,6 @@ public class VideoCategory implements Serializable {
     public void setName(String name) {
         this.name = name;
     }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-    
     
     @Override
     public boolean equals(Object o) {
@@ -79,12 +65,11 @@ public class VideoCategory implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         VideoCategory that = (VideoCategory) o;
         return Objects.equals(id, that.id) &&
-                Objects.equals(name, that.name) &&
-                Objects.equals(description, that.description) ;
+                Objects.equals(name, that.name) ;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id,name,description) ;
+        return Objects.hash(id,name) ;
     }
 }
