@@ -110,6 +110,35 @@ public class MovieResource {
     }
     
     /**
+     * get all the movies in the DB
+     * @return 
+     */
+    @GET
+    @Produces("application/json")
+    public Response getAllMovies(){
+        
+        //get all the movies from DB
+        List<Movie> listOfMovies = selectAllMoviesFromDB() ;
+        
+        logger.log(Level.INFO, "There are " + listOfMovies.size() + " movies on the server") ;
+        
+        //set the base64 representation of each movie's poster image
+        listOfMovies = setPosterImageForMovies(listOfMovies) ;
+            
+        //send status code 200
+        //parse list of movies to JSON and set JSON as entity of response
+        Gson gson = new GsonBuilder()
+        .excludeFieldsWithoutExposeAnnotation()
+        .serializeNulls()
+        .create();
+        String jsonString = gson.toJson(listOfMovies) ;
+        Response.ResponseBuilder responseBuilder = Response.ok() ;
+        responseBuilder.entity(jsonString) ;
+            
+        return responseBuilder.build() ;
+    }
+    
+    /**
      * set the base 64 representation of each movie in the list
      */
     private List<Movie> setPosterImageForMovies(List<Movie> listOfMovies){
@@ -319,6 +348,20 @@ public class MovieResource {
         Query<Movie> query = session.createQuery("FROM Movie m JOIN FETCH m.videoProducer JOIN FETCH m.videoCategory WHERE m.videoProducer.id = :producerId OR m.videoCategory.id = :categoryId", Movie.class) ;
         query.setParameter("producerId", producerId) ;
         query.setParameter("categoryId", categoryId) ;
+        List<Movie> listOfMovies = query.getResultList() ;
+        session.close() ;
+        return listOfMovies ;
+    }
+    
+    /**
+     * select all the movies from the DB
+     * @return the result set
+     */
+    private List<Movie> selectAllMoviesFromDB(){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query<Movie> query = session.createQuery("FROM Movie m JOIN FETCH m.videoProducer JOIN FETCH m.videoCategory", Movie.class) ;
         List<Movie> listOfMovies = query.getResultList() ;
         session.close() ;
         return listOfMovies ;

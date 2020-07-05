@@ -108,6 +108,34 @@ public class DocumentaryResource {
     }
     
     /**
+     * get all the docs in the DB
+     * @return 
+     */
+    @GET
+    @Produces("application/json")
+    public Response getAllDocs(){
+        
+        //get the list of docs
+        List<Documentary> listOfDocumentaries = selectAllDocumentariesFromDB() ;
+            
+        logger.log(Level.INFO,"There are " + listOfDocumentaries.size() + " docs on the server") ;
+            
+        //set the base64 representation of each doc's poster image
+        listOfDocumentaries = setPosterImageForDocumentaries(listOfDocumentaries) ;
+            
+        //send http status code 200
+        //parse list of docs to JSON and set JSON as entity of response
+        Gson gson = new GsonBuilder()
+        .excludeFieldsWithoutExposeAnnotation()
+        .serializeNulls()
+        .create();
+        String jsonString = gson.toJson(listOfDocumentaries) ;
+        Response.ResponseBuilder responseBuilder = Response.ok() ;
+        responseBuilder.entity(jsonString) ;
+        return responseBuilder.build() ;
+    }
+    
+    /**
      * set the base 64 representation of each doc's poster image in the list
      */
     private List<Documentary> setPosterImageForDocumentaries(List<Documentary> listOfDocumentaries){
@@ -323,5 +351,18 @@ public class DocumentaryResource {
         return listOfDocumentaries ;
     }
     
+    /**
+     * select all docs from the DB
+     * @return 
+     */
+    private List<Documentary> selectAllDocumentariesFromDB(){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query<Documentary> query = session.createQuery("FROM Documentary d JOIN FETCH d.videoProducer JOIN FETCH d.videoCategory", Documentary.class) ;
+        List<Documentary> listOfDocumentaries = query.getResultList() ;
+        session.close() ;
+        return listOfDocumentaries ;
+    }
     
 }

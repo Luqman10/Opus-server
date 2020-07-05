@@ -109,6 +109,34 @@ public class SeriesResource {
     }
     
     /**
+     * get all the series in the DB
+     * @return 
+     */
+    @GET
+    @Produces("application/json")
+    public Response getAllSeries(){
+        
+        //get the list of series
+        List<Series> listOfSeries = selectAllSeriesFromDB() ;
+        
+        logger.log(Level.INFO,  "There are " + listOfSeries.size() + " series on the server") ;
+                    
+        //set the base64 representation of each series' poster image
+        listOfSeries = setPosterImageForSeries(listOfSeries) ;
+            
+        //parse list of docs to JSON and set JSON as entity of response
+        Gson gson = new GsonBuilder()
+        .excludeFieldsWithoutExposeAnnotation()
+        .serializeNulls()
+        .create();
+        String jsonString = gson.toJson(listOfSeries) ;
+        Response.ResponseBuilder responseBuilder = Response.ok() ;
+        responseBuilder.entity(jsonString) ;
+        
+        return responseBuilder.build() ;
+    }
+    
+    /**
      * get a list of series recommendations based on a user's series download history
      * @param profileAccountId the user's profile account id
      * @return 
@@ -319,6 +347,20 @@ public class SeriesResource {
         Query<Series> query = session.createQuery("FROM Series s JOIN FETCH s.videoProducer JOIN FETCH s.videoCategory WHERE s.videoProducer.id = :producerId OR s.videoCategory.id = :categoryId", Series.class) ;
         query.setParameter("producerId", producerId) ;
         query.setParameter("categoryId", categoryId) ;
+        List<Series> listOfSeries = query.getResultList() ;
+        session.close() ;
+        return listOfSeries ;
+    }
+    
+    /**
+     * select all the series in the DB
+     * @return the result set
+     */
+    private List<Series> selectAllSeriesFromDB(){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query<Series> query = session.createQuery("FROM Series s JOIN FETCH s.videoProducer JOIN FETCH s.videoCategory", Series.class) ;
         List<Series> listOfSeries = query.getResultList() ;
         session.close() ;
         return listOfSeries ;

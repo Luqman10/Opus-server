@@ -13,8 +13,6 @@ import com.samaritan.opus.model.MusicVideo;
 import com.samaritan.opus.model.Series;
 import com.samaritan.opus.model.VideoRecommendation;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

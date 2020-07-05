@@ -143,6 +143,35 @@ public class MusicVideoResource {
     }
     
     /**
+     * get all music videos
+     * @return response with music video list as entity
+     */
+    @GET
+    @Produces("application/json")
+    public Response getAllMusicVideos(){
+        
+        //get all music videos from the DB
+        List<MusicVideo> listOfMusicVideos = selectAllMusicVideosFromDB() ;
+        
+        //log the number of music videos
+        LOGGER.log(Level.INFO, String.format("There are %d music videos on the server", listOfMusicVideos.size())) ;
+        
+        //set poster image for each music video
+        listOfMusicVideos = setPosterImageForMusicVideos(listOfMusicVideos) ;
+         
+        //parse list of music videos to JSON and set JSON as entity of response
+        Gson gson = new GsonBuilder()
+        .excludeFieldsWithoutExposeAnnotation()
+        .serializeNulls()
+        .create();
+        String jsonString = gson.toJson(listOfMusicVideos) ;
+        Response.ResponseBuilder responseBuilder = Response.ok() ;
+        responseBuilder.entity(jsonString) ;
+        
+        return responseBuilder.build() ;
+    }
+    
+    /**
      * set the base 64 representation of each music video's poster image
      * @param listOfMusicVideos the list of music videos
      * @return 
@@ -370,6 +399,20 @@ public class MusicVideoResource {
         Query<MusicVideo> query = session.createQuery("FROM MusicVideo mv JOIN FETCH mv.artiste JOIN FETCH mv.genre WHERE mv.artiste.id = :artisteId OR mv.genre.id = :genreId", MusicVideo.class) ;
         query.setParameter("artisteId", artisteId) ;
         query.setParameter("genreId", genreId) ;
+        List<MusicVideo> listOfMusicVideos = query.getResultList() ;
+        session.close() ;
+        return listOfMusicVideos ;
+    }
+    
+    /**
+     * get all the music videos in the DB
+     * @return the result set
+     */
+    private List<MusicVideo> selectAllMusicVideosFromDB(){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query<MusicVideo> query = session.createQuery("FROM MusicVideo mv JOIN FETCH mv.artiste JOIN FETCH mv.genre", MusicVideo.class) ;
         List<MusicVideo> listOfMusicVideos = query.getResultList() ;
         session.close() ;
         return listOfMusicVideos ;

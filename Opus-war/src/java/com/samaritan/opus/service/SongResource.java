@@ -226,6 +226,38 @@ public class SongResource {
     }
     
     /**
+     * returns a response with its body as a json list of songs that match the given genre id
+     * @param genreId the genre whose songs are requested
+     * @return http response
+     */
+    @GET
+    @Produces("application/json")
+    public Response getSongsForGenre(@QueryParam("genreId") int genreId){
+        
+        //get songs that match query
+        List<Song> listOfSongs = selectSongsFromDBThatMatchGenre(genreId) ;
+        
+        //log the number of songs in the genre
+        logger.log(Level.INFO, String.format("%s has %d songs", "Genre with ID: " + genreId,listOfSongs.size())) ;
+        
+        //set song details
+        listOfSongs = setDetailsForSongs(listOfSongs) ;
+        
+        //parse list of songs to JSON and set JSON as entity of response
+        Gson gson = new GsonBuilder()
+        .excludeFieldsWithoutExposeAnnotation()
+        .serializeNulls()
+        .create();
+        String jsonString = gson.toJson(listOfSongs) ;
+            
+        //send response with 200 code
+        Response.ResponseBuilder responseBuilder = Response.ok() ;
+        responseBuilder.entity(jsonString) ;
+        return responseBuilder.build() ;
+        
+    }
+    
+    /**
      * get the id of the artiste whose songs the user has downloaded most
      * @param profileAccountId the user's id
      * @return the id of the artiste
@@ -398,6 +430,17 @@ public class SongResource {
         Session session = sessionFactory.openSession() ;
         Query<Song> query = session.createQuery("FROM Song s JOIN FETCH s.artiste JOIN FETCH s.genre LEFT JOIN FETCH s.album WHERE s.album.id=:albumId", Song.class) ;
         query.setParameter("albumId", albumId) ;
+        List<Song> listOfSongs = query.getResultList() ;
+        session.close() ;
+        return listOfSongs ;
+    }
+    
+    private List<Song> selectSongsFromDBThatMatchGenre(int genreId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query<Song> query = session.createQuery("FROM Song s JOIN FETCH s.artiste JOIN FETCH s.genre LEFT JOIN FETCH s.album WHERE s.genre.id=:genreId", Song.class) ;
+        query.setParameter("genreId", genreId) ;
         List<Song> listOfSongs = query.getResultList() ;
         session.close() ;
         return listOfSongs ;
