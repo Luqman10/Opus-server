@@ -8,7 +8,7 @@ package com.samaritan.opus.service;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.samaritan.opus.application.OpusApplication;
-import com.samaritan.opus.model.Song;
+import com.samaritan.opus.model.AlbumReleaseNotification;
 import com.samaritan.opus.model.SongReleaseNotification;
 import java.util.List;
 import java.util.logging.Level;
@@ -93,6 +93,57 @@ public class NotificationResource {
     }
     
     /**
+     * returns a list of AlbumReleaseNotifications that the user has not yet received
+     * @param profileAccountId the user's profile account id
+     * @return response
+     */
+    @Path("/album")
+    @GET
+    @Produces("application/json")
+    public Response getNewAlbumReleaseNotifications(@QueryParam("profileAccountId") int profileAccountId){
+        
+        
+        Response.ResponseBuilder responseBuilder ;
+        
+        try{
+            
+            //the list of notifications user has not read yet
+            List<AlbumReleaseNotification> listOfNotifications = getAlbumNotificationsFromDB(profileAccountId) ;
+
+            //set userNotified of all notifications in the list to true
+            for(AlbumReleaseNotification albumReleaseNotification : listOfNotifications){
+                
+                //when updating any of the notifications fail, return a server error to client
+                if(!updateAlbumReleaseNotificationUserNotifiedToTrue(albumReleaseNotification)){
+                    
+                    responseBuilder = Response.serverError() ;
+                    return responseBuilder.build() ;
+                }
+                
+            }
+                
+            //log list size
+            logger.log(Level.INFO, "Profile account with ID:" + profileAccountId + " has " + listOfNotifications.size() + 
+                    " unread album notifications") ;
+
+            Gson gson = new GsonBuilder()
+            .excludeFieldsWithoutExposeAnnotation()
+            .serializeNulls()
+            .create();
+            String jsonString = gson.toJson(listOfNotifications) ;
+            responseBuilder = Response.ok() ;
+            responseBuilder.entity(jsonString) ;
+            return responseBuilder.build() ;
+        }
+        catch(HibernateException ex){
+            
+            responseBuilder = Response.serverError() ;
+            return responseBuilder.build() ;
+        }
+        
+    }
+    
+    /**
      * get unread song release notifications for the given profile account id
      * @param profileAccountId profile account id
      * @return list
@@ -106,6 +157,23 @@ public class NotificationResource {
         List<SongReleaseNotification> listOfSongReleaseNotifications = query.getResultList() ;
         session.close() ;
         return listOfSongReleaseNotifications ;
+    }
+    
+    
+    /**
+     * get unread album release notifications for the given profile account id
+     * @param profileAccountId profile account id
+     * @return list
+     */
+    private List<AlbumReleaseNotification> getAlbumNotificationsFromDB(int profileAccountId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query<AlbumReleaseNotification> query = session.createQuery("FROM AlbumReleaseNotification arn JOIN FETCH arn.profileAccount JOIN FETCH arn.artiste JOIN FETCH arn.album WHERE arn.profileAccount.id=:profileAccountId AND arn.userNotified = false", AlbumReleaseNotification.class) ;
+        query.setParameter("profileAccountId", profileAccountId) ;
+        List<AlbumReleaseNotification> listOfAlbumReleaseNotifications = query.getResultList() ;
+        session.close() ;
+        return listOfAlbumReleaseNotifications ;
     }
     
     
@@ -126,6 +194,39 @@ public class NotificationResource {
             transaction = session.beginTransaction() ;
             Query query = session.createQuery("UPDATE SongReleaseNotification SET userNotified=true WHERE id=:id") ;
             query.setParameter("id", songReleaseNotification.getId()) ;
+            success = query.executeUpdate() ;
+            transaction.commit() ;
+        }
+        catch(HibernateException ex){
+            
+            if(transaction != null) transaction.rollback() ;
+            throw ex ;
+        }
+        finally{
+            
+            session.close() ;
+        }
+        
+        return success > 0 ;
+    }
+    
+    /**
+     * update the passed albumReleaseNotification's userNotified to true
+     * @param albumReleaseNotification 
+     * @return true if update was successful
+     */
+    private boolean updateAlbumReleaseNotificationUserNotifiedToTrue(AlbumReleaseNotification albumReleaseNotification) 
+            throws HibernateException{
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Transaction transaction = null ;
+        int success = 0 ;
+        try{
+            
+            transaction = session.beginTransaction() ;
+            Query query = session.createQuery("UPDATE AlbumReleaseNotification SET userNotified=true WHERE id=:id") ;
+            query.setParameter("id", albumReleaseNotification.getId()) ;
             success = query.executeUpdate() ;
             transaction.commit() ;
         }
