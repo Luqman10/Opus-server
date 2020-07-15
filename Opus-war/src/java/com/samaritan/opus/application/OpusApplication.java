@@ -9,6 +9,7 @@ import com.samaritan.opus.service.MusicVideoResource;
 import com.samaritan.opus.service.NotificationResource;
 import com.samaritan.opus.service.PaymentAccountResource;
 import com.samaritan.opus.service.ProfileAccountResource;
+import com.samaritan.opus.service.PropertiesResource;
 import com.samaritan.opus.service.SongResource;
 import com.samaritan.opus.service.SeriesResource ;
 import com.samaritan.opus.service.VideoService;
@@ -48,6 +49,7 @@ public class OpusApplication extends Application{
         hashSet.add(SeriesResource.class) ;
         hashSet.add(VideoService.class) ;
         hashSet.add(NotificationResource.class) ;
+        hashSet.add(PropertiesResource.class) ;
         return hashSet ;
     }
     

@@ -40,5 +40,8 @@
         <property name="datePasswordResetKeyCreated">
             <column name="date_password_reset_key_created" sql-type="bigint(20)"/>
         </property>
+        <property name="userLoggedIn">
+            <column name="is_user_logged_in" sql-type="tinyint(1)"/>
+        </property>
     </class>
 </hibernate-mapping>
