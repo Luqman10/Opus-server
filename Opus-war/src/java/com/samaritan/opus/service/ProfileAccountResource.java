@@ -76,6 +76,7 @@ public class ProfileAccountResource{
                 profileAccount.setDateEmailVerificationKeyCreated(currentDate) ;
                 profileAccount.setDateAccountCreated(currentDate) ;
                 profileAccount.setEmailVerified(false) ;
+                profileAccount.setUserLoggedIn(false) ;
                 saveProfileAccountInDatabase(profileAccount) ;
                 
                 //send a verifiction email to the user
@@ -147,6 +148,14 @@ public class ProfileAccountResource{
             
             //send a response code of 200, if the email was verified
             if(verifyProfileAccountEmailAddress(email,key)){
+                
+                //update the profile account's isUserLoggedIn, send a 500 if it cannot be updated
+                if(!updateProfileAccountIsUserLoggedIn(email, true)){
+
+                    responseBuilder = Response.serverError() ;
+                    responseBuilder.entity(createGenericJsonResponse("an unexpected error occurred. please try again")) ;
+                    return responseBuilder.build() ;
+                }
 
                 ProfileAccount profileAccount = retrieveProfileAccountFromDBUsingEmail(email) ;
                 responseBuilder = Response.ok() ;
@@ -289,7 +298,26 @@ public class ProfileAccountResource{
                                 return responseBuilder.build() ;
                             }
                         }
+                        
+                        //if the profile account is already logged in, report to client
+                        if(profileAccount.isUserLoggedIn()){
+                            
+                            responseBuilder = Response.status(Response.Status.CONFLICT) ;
+                            responseBuilder.entity(createGenericJsonResponse("sorry, you have already logged in to your account")) ;
+                            return responseBuilder.build() ;
+                        }
+                        else{
+                            
+                            //update the profile account's isUserLoggedIn, send a 500 if it cannot be updated
+                            if(!updateProfileAccountIsUserLoggedIn(profileAccount.getEmail(), true)){
 
+                                responseBuilder = Response.serverError() ;
+                                responseBuilder.entity(createGenericJsonResponse("an unexpected error occurred. please try again")) ;
+                                return responseBuilder.build() ;
+                            }
+                            
+                        }
+                        
                         //get the payment account whose email macthes that of the profile account
                         PaymentAccount paymentAccount = retrievePaymentAccountFromDBUsingEmail(profileAccount.getEmail()) ;
                         //send a 200 response code with the entity(profile account id, username, email, 
@@ -463,8 +491,8 @@ public class ProfileAccountResource{
                 //generate new ver key
                 String verificationKey = generateKey() ;
 
-                //update the email address, ver key, account active, date verification key created, is_email_verified in DB
-                updateProfileAccountEmail(email, newEmail, verificationKey, false, System.currentTimeMillis(), false) ;
+                //update the email address, ver key, account active, date verification key created, is_email_verified, userLoggedIn in DB
+                updateProfileAccountEmail(email, newEmail, verificationKey, false, System.currentTimeMillis(), false, false) ;
 
                 //update the retrieved profile account with the new email
                 profileAccount.setEmail(newEmail) ;
@@ -485,7 +513,7 @@ public class ProfileAccountResource{
 
                     //reset the profile account's email back to the previous email if sending email verification failed
                     updateProfileAccountEmail(newEmail, email, profileAccount.getEmailVerificationKey(), true,
-                        profileAccount.getDateEmailVerificationKeyCreated(), true) ;
+                        profileAccount.getDateEmailVerificationKeyCreated(), true, true) ;
 
                     //send bad gateway (502) response code JSON body describing the problem
                     responseBuilder = Response.status(Response.Status.BAD_GATEWAY) ;
@@ -513,7 +541,7 @@ public class ProfileAccountResource{
 
             //reset the profile account's email back to the previous email if sending email verification failed
             updateProfileAccountEmail(newEmail, email, profileAccount.getEmailVerificationKey(), true,
-                profileAccount.getDateEmailVerificationKeyCreated(), true) ;
+                profileAccount.getDateEmailVerificationKeyCreated(), true, true) ;
 
             //send bad gateway (502) response code JSON body describing the problem
             responseBuilder = Response.status(Response.Status.BAD_GATEWAY) ;
@@ -576,6 +604,14 @@ public class ProfileAccountResource{
         Response.ResponseBuilder responseBuilder ;
         
         try{
+            
+            //update the profile account's isUserLoggedIn, send a 500 if it cannot be updated
+            if(!updateProfileAccountIsUserLoggedIn(email, false)){
+
+                responseBuilder = Response.serverError() ;
+                responseBuilder.entity(createGenericJsonResponse("an unexpected error occurred. please try again")) ;
+                return responseBuilder.build() ;
+            }
             
             if(updateProfileAccountActive(email, false)){
 
@@ -643,6 +679,41 @@ public class ProfileAccountResource{
         
         return responseBuilder.build() ;
         
+    }
+    
+    /**
+     * logout of the profile account with the given email
+     * @param email the profile account's email address
+     */
+    @Path("/logout")
+    @GET
+    @Produces("application/json")
+    public Response logout(@QueryParam("email") String email){
+        
+        //to create appropriate response to send to client
+        Response.ResponseBuilder responseBuilder ;
+        
+        try{
+            
+            //update the profile account's isUserLoggedIn, send a 500 if it cannot be updated
+            if(!updateProfileAccountIsUserLoggedIn(email, false)){
+
+                responseBuilder = Response.serverError() ;
+                responseBuilder.entity(createGenericJsonResponse("an unexpected error occurred. please try again")) ;
+                return responseBuilder.build() ;
+            }
+            
+            //send a 200 if the account has been logged out successfully
+            responseBuilder = Response.ok() ;
+            responseBuilder.entity(createGenericJsonResponse("logout successful")) ;
+        }
+        catch(HibernateException ex){
+            
+            responseBuilder = Response.serverError() ;
+            responseBuilder.entity(createGenericJsonResponse("an unexpected error occurred. please try again")) ;
+        }
+        
+        return responseBuilder.build() ;
     }
 
     /**
@@ -776,9 +847,10 @@ public class ProfileAccountResource{
      * @param accountActive true if account is active
      * @param dateKeyCreated date key was created
      * @param isEmailVerified true if the email is verified
+     * @param isUserLoggedIn true if the user is logged in
      */
     private void updateProfileAccountEmail(String email, String newEmail, String verificationKey, boolean accountActive,
-                                              Long dateKeyCreated, boolean isEmailVerified) throws HibernateException{
+                                              Long dateKeyCreated, boolean isEmailVerified, boolean isUserLoggedIn) throws HibernateException{
 
         SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
         Session session = sessionFactory.openSession() ;
@@ -786,13 +858,14 @@ public class ProfileAccountResource{
         try{
             
             transaction = session.beginTransaction() ;
-            Query query = session.createQuery("UPDATE ProfileAccount SET email=:newEmail, emailVerificationKey=:emailVerificationKey, dateEmailVerificationKeyCreated=:dateEmailVerificationKeyCreated, accountActive=:accountActive, emailVerified=:emailVerified WHERE email=:email") ;
+            Query query = session.createQuery("UPDATE ProfileAccount SET email=:newEmail, emailVerificationKey=:emailVerificationKey, dateEmailVerificationKeyCreated=:dateEmailVerificationKeyCreated, accountActive=:accountActive, emailVerified=:emailVerified, userLoggedIn=:userLoggedIn WHERE email=:email") ;
             query.setParameter("newEmail", newEmail) ;
             query.setParameter("email",email) ;
             query.setParameter("emailVerificationKey", verificationKey) ;
             query.setParameter("accountActive", accountActive) ;
             query.setParameter("dateEmailVerificationKeyCreated", dateKeyCreated) ;
             query.setParameter("emailVerified", isEmailVerified) ;
+            query.setParameter("userLoggedIn", isUserLoggedIn) ;
             query.executeUpdate() ;
             transaction.commit() ;
         }
@@ -877,6 +950,42 @@ public class ProfileAccountResource{
         return success > 0 ;
     }
 
+    
+    /**
+     * update a profile account's is_user_logged_in
+     * @param email the profile account's email address
+     * @param isUserLoggedIn true if the profile account has been logged in
+     * @return true if update was successful
+     */
+    private boolean updateProfileAccountIsUserLoggedIn(String email, boolean isUserLoggedIn) throws HibernateException{
+
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Transaction transaction = null ;
+        int success = 0 ;
+        try{
+            
+            transaction = session.beginTransaction() ;
+            Query query = session.createQuery("UPDATE ProfileAccount SET userLoggedIn=:userLoggedIn WHERE email=:email") ;
+            query.setParameter("userLoggedIn", isUserLoggedIn) ;
+            query.setParameter("email",email) ;
+            success = query.executeUpdate() ;
+            transaction.commit() ;
+        }
+        catch(HibernateException ex){
+            
+            if(transaction != null) transaction.rollback() ;
+            throw ex ;
+        }
+        finally{
+            
+            session.close() ;
+        }
+        
+        return success > 0 ;
+    }
+
+    
     /**
      * save the given profile account in the database
      * @param profileAccount

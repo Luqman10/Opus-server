@@ -53,5 +53,7 @@
         <mapping resource="com/samaritan/opus/model/SongReleaseNotification.hbm.xml"/>
         <mapping class="com.samaritan.opus.model.AlbumReleaseNotification"/>
         <mapping resource="com/samaritan/opus/model/AlbumReleaseNotification.hbm.xml"/>
+        <mapping class="com.samaritan.opus.model.MusicVideoReleaseNotification"/>
+        <mapping resource="com/samaritan/opus/model/MusicVideoReleaseNotification.hbm.xml"/>
     </session-factory>
 </hibernate-configuration>

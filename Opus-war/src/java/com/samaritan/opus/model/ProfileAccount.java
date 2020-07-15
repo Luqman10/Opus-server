@@ -56,7 +56,12 @@ public class ProfileAccount {
     @Expose(serialize = true, deserialize = true)
     @Column(name = "date_password_reset_key_created")
     private Long datePasswordResetKeyCreated;
- 
+    
+    @Expose(serialize = true, deserialize = true)
+    @Type(type = "org.hibernate.type.NumericBooleanType")
+    @Column(name = "is_user_logged_in", nullable = false, columnDefinition = "TINYINT")
+    private boolean userLoggedIn ;
+    
     public Integer getId() {
         return id;
     }
@@ -150,6 +155,14 @@ public class ProfileAccount {
     public void setDatePasswordResetKeyCreated(Long datePasswordResetKeyCreated) {
         this.datePasswordResetKeyCreated = datePasswordResetKeyCreated;
     }
+    
+    public boolean isUserLoggedIn() {
+        return userLoggedIn;
+    }
+
+    public void setUserLoggedIn(boolean userLoggedIn) {
+        this.userLoggedIn = userLoggedIn;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -166,13 +179,14 @@ public class ProfileAccount {
                 Objects.equals(dateAccountCreated, that.dateAccountCreated) &&
                 Objects.equals(emailVerified, that.emailVerified) &&
                 Objects.equals(passwordResetKey, that.passwordResetKey) &&
-                Objects.equals(datePasswordResetKeyCreated, that.datePasswordResetKeyCreated)
+                Objects.equals(datePasswordResetKeyCreated, that.datePasswordResetKeyCreated) &&
+                Objects.equals(userLoggedIn, that.userLoggedIn)
                 ;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, email, username, password, emailVerificationKey, accountActive, dateEmailVerificationKeyCreated, dateAccountCreated, emailVerified, passwordResetKey,datePasswordResetKeyCreated);
+        return Objects.hash(id, email, username, password, emailVerificationKey, accountActive, dateEmailVerificationKeyCreated, dateAccountCreated, emailVerified, passwordResetKey,datePasswordResetKeyCreated,userLoggedIn);
     }
     
 }

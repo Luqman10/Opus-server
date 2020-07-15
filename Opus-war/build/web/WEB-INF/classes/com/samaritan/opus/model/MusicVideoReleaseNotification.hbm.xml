@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+
+<hibernate-mapping>
+    
+    <class name="com.samaritan.opus.model.MusicVideoReleaseNotification" table="music_video_release_notification" schema="opus">
+        
+        <id name="id" column="id" type="java.lang.Integer">
+            <generator class="identity"/>
+        </id>
+        
+        <many-to-one name="profileAccount" column="profile_account" unique="true" cascade = "all"/>
+        
+        <many-to-one name="artiste" column="artiste" unique="true" cascade = "all"/>
+        
+        <many-to-one name="musicVideo" column="music_video" unique="true" cascade = "all"/>
+        
+        <property name="userNotified" column="is_user_notified"/>
+        
+        <property name="dateCreated" column="date_created"/>
+        
+    </class>
+    
+</hibernate-mapping>
