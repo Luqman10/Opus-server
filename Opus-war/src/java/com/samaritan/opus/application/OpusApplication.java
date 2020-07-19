@@ -1,5 +1,6 @@
 package com.samaritan.opus.application;
 
+import com.samaritan.opus.filter.OpusRequestFilter;
 import com.samaritan.opus.service.AlbumResource;
 import com.samaritan.opus.service.ArtisteResource;
 import com.samaritan.opus.service.DocumentaryResource;
@@ -50,6 +51,7 @@ public class OpusApplication extends Application{
         hashSet.add(VideoService.class) ;
         hashSet.add(NotificationResource.class) ;
         hashSet.add(PropertiesResource.class) ;
+        hashSet.add(OpusRequestFilter.class) ;
         return hashSet ;
     }
     
