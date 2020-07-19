@@ -18,7 +18,7 @@ import javax.persistence.Table;
 
 /**
  * A 16 char token assigned to a profile account and expected as the Authentication request header with every incoming
- * request apart from login and sign up request.
+ * request apart from login, verify user email request.
  * @author electron
  */
 @Entity

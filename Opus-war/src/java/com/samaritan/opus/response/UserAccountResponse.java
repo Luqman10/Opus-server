@@ -16,23 +16,28 @@ public class UserAccountResponse {
     @SerializedName("email")
     private String email ;
     
+    @SerializedName("token")
+    private String token ;
+    
     @SerializedName("paymentAccountId")
     private int paymentAccountId = -1 ;
 
     @SerializedName("mobileMoneyNumber")
     private String mobileMoneyNumber ;
-    
+
     /**
      * to be used when only profile account details needs to be sent
      * @param profileAccountId
      * @param username
-     * @param email 
+     * @param email
+     * @param token
      */
-    public UserAccountResponse(int profileAccountId, String username, String email){
+    public UserAccountResponse(int profileAccountId, String username, String email, String token){
         
         this.profileAccountId = profileAccountId ;
         this.username = username ;
         this.email = email ;
+        this.token = token ;
 
     }
 
@@ -42,15 +47,18 @@ public class UserAccountResponse {
      * @param username
      * @param email
      * @param paymentAccountId
-     * @param mobileMoneyNumber 
+     * @param mobileMoneyNumber
+     * @param token
      */
-    public UserAccountResponse(int profileAccountId, String username, String email, int paymentAccountId, String mobileMoneyNumber){
+    public UserAccountResponse(int profileAccountId, String username, String email, int paymentAccountId, String mobileMoneyNumber,
+            String token){
         
         this.profileAccountId = profileAccountId ;
         this.username = username ;
         this.email = email ;
         this.paymentAccountId = paymentAccountId ;
         this.mobileMoneyNumber = mobileMoneyNumber ;
+        this.token = token ;
 
     }
     
@@ -87,6 +95,14 @@ public class UserAccountResponse {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+    
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
     
     public int getPaymentAccountId() {

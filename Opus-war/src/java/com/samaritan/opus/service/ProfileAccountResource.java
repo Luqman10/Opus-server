@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.samaritan.opus.application.OpusApplication;
 import com.samaritan.opus.application.OpusProperties;
+import com.samaritan.opus.model.BearerToken;
 import com.samaritan.opus.model.LoginCredentials;
 import com.samaritan.opus.model.PaymentAccount;
 import com.samaritan.opus.model.ProfileAccount;
@@ -156,11 +157,20 @@ public class ProfileAccountResource{
                     responseBuilder.entity(createGenericJsonResponse("an unexpected error occurred. please try again")) ;
                     return responseBuilder.build() ;
                 }
-
+                
+                //retrieve profile account from DB
                 ProfileAccount profileAccount = retrieveProfileAccountFromDBUsingEmail(email) ;
+                
+                //generate bearer token for profile account and save in DB
+                String token = generateKey() ;
+                BearerToken bearerToken = new BearerToken() ;
+                bearerToken.setProfileAccount(profileAccount) ;
+                bearerToken.setToken(token) ;
+                token = saveBearerTokenForProfileAccount(bearerToken) ;
+                
                 responseBuilder = Response.ok() ;
                 responseBuilder.entity(createUserAccountJsonResponse(profileAccount.getId(),profileAccount.getUsername(),
-                        profileAccount.getEmail())) ;
+                        profileAccount.getEmail(),token)) ;
             }
             //if there is no profile account with the given email or verification key, send a 409
             else{
@@ -320,10 +330,14 @@ public class ProfileAccountResource{
                         
                         //get the payment account whose email macthes that of the profile account
                         PaymentAccount paymentAccount = retrievePaymentAccountFromDBUsingEmail(profileAccount.getEmail()) ;
+                        
+                        //get the profile account's bearer token
+                        String token = retrieveBearerToken(profileAccount.getId()) ;
+                        
                         //send a 200 response code with the entity(profile account id, username, email, 
                         //payment account id, momo number)
                         responseBuilder = Response.ok() ;
-                        responseBuilder.entity(createUserAccountJsonResponse(profileAccount, paymentAccount)) ;
+                        responseBuilder.entity(createUserAccountJsonResponse(profileAccount, paymentAccount, token)) ;
                         
                     }
                 }
@@ -1181,11 +1195,12 @@ public class ProfileAccountResource{
      * @param id
      * @param username
      * @param email
+     * @param token
      * @return the json string
      */
-    private String createUserAccountJsonResponse(int profileAccountId, String username, String email){
+    private String createUserAccountJsonResponse(int profileAccountId, String username, String email, String token){
 
-        UserAccountResponse userAccountResponse = new UserAccountResponse(profileAccountId, username, email) ;
+        UserAccountResponse userAccountResponse = new UserAccountResponse(profileAccountId, username, email, token) ;
         String responseBody = new Gson().toJson(userAccountResponse, UserAccountResponse.class) ;
         return responseBody ;
     }
@@ -1195,21 +1210,23 @@ public class ProfileAccountResource{
      * create a string holding user account info in json format
      * @param profileAccount
      * @param paymentAccount
+     * @param token
      * @return the json object
      */
-    private String createUserAccountJsonResponse(ProfileAccount profileAccount, PaymentAccount paymentAccount){
+    private String createUserAccountJsonResponse(ProfileAccount profileAccount, PaymentAccount paymentAccount, 
+            String token){
 
         UserAccountResponse userAccountResponse ;
         //create user account response based on whether payment account is null or not
         if(paymentAccount == null){
             
             userAccountResponse = new UserAccountResponse(profileAccount.getId(), profileAccount.getUsername(), 
-                    profileAccount.getEmail()) ;
+                    profileAccount.getEmail(), token) ;
         }
         else{
             
             userAccountResponse = new UserAccountResponse(profileAccount.getId(), profileAccount.getUsername(), 
-                    profileAccount.getEmail(), paymentAccount.getId(), paymentAccount.getPhoneNumber()) ;
+                    profileAccount.getEmail(), paymentAccount.getId(), paymentAccount.getPhoneNumber(), token) ;
         }
         String responseBody = new Gson().toJson(userAccountResponse, UserAccountResponse.class) ;
         return responseBody ;
@@ -1256,6 +1273,57 @@ public class ProfileAccountResource{
         }
         
         return success > 0 ;
+    }
+    
+    /**
+     * save or update the passed token into the bearer_token table
+     * @param bearerToken the bearer token
+     */
+    private String saveBearerTokenForProfileAccount(BearerToken bearerToken){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Transaction transaction = null ;
+        String tokenToReturn = "" ;
+        try{
+            transaction = session.beginTransaction() ;
+            session.save(bearerToken) ;
+            transaction.commit() ;
+            logger.log(Level.INFO, "A bearer token has been assigned with profile id " + 
+                    bearerToken.getProfileAccount().getId()) ;
+            tokenToReturn = bearerToken.getToken() ;
+        }
+        catch(ConstraintViolationException ex){
+            
+            logger.log(Level.INFO, "A bearer token already exists for profile account with id " + 
+                    bearerToken.getProfileAccount().getId()) ;
+            
+            if(transaction != null) transaction.rollback() ;
+            
+            //return the bearer token that already exists
+            tokenToReturn = retrieveBearerToken(bearerToken.getProfileAccount().getId()) ;
+        }
+        finally{
+            
+            session.close() ;
+            return tokenToReturn ;
+        }
+    }
+    
+    /**
+     * get the bearer token assigned to the profile account with given id
+     * @param profileAccountId
+     * @return the token
+     */
+    private String retrieveBearerToken(int profileAccountId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query<BearerToken> query = session.createQuery("FROM BearerToken bt JOIN FETCH bt.profileAccount WHERE bt.profileAccount.id=:profileAccountId", BearerToken.class) ;
+        query.setParameter("profileAccountId", profileAccountId) ;
+        BearerToken bearerToken = query.uniqueResult() ;
+        session.close() ;
+        return bearerToken.getToken() ;
     }
 
 }
