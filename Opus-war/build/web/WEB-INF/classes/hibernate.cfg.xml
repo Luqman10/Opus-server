@@ -55,5 +55,7 @@
         <mapping resource="com/samaritan/opus/model/AlbumReleaseNotification.hbm.xml"/>
         <mapping class="com.samaritan.opus.model.MusicVideoReleaseNotification"/>
         <mapping resource="com/samaritan/opus/model/MusicVideoReleaseNotification.hbm.xml"/>
+        <mapping class="com.samaritan.opus.model.BearerToken"/>
+        <mapping resource="com/samaritan/opus/model/BearerToken.hbm.xml"/>
     </session-factory>
 </hibernate-configuration>
