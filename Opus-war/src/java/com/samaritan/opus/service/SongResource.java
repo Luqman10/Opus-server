@@ -62,6 +62,9 @@ public class SongResource {
         //set the details for songs in the list
         listOfSongs = setDetailsForSongs(listOfSongs) ;
         
+        //sort the list
+        listOfSongs.sort(null) ;
+        
         //parse list of songs to JSON and set JSON as entity of response
         Gson gson = new GsonBuilder()
         .excludeFieldsWithoutExposeAnnotation()
@@ -93,6 +96,9 @@ public class SongResource {
         
         //set the details for songs in the list
         listOfSongs = setDetailsForSongs(listOfSongs) ;
+        
+        //sort the list
+        listOfSongs.sort(null) ;
         
         //parse list of songs to JSON and set JSON as entity of response
         Gson gson = new GsonBuilder()
@@ -128,6 +134,9 @@ public class SongResource {
         
         //set details for each song in the list
         listOfSongs = setDetailsForSongs(listOfSongs) ;
+        
+        //sort the list
+        listOfSongs.sort(null) ;
         
         //parse list of songs to JSON and set JSON as entity of response
         Gson gson = new GsonBuilder()
@@ -211,6 +220,9 @@ public class SongResource {
         //set details for each song in the list
         listOfRecommendations = setDetailsForSongs(listOfRecommendations) ;
         
+        //sort the list
+        listOfRecommendations.sort(null) ;
+        
         //parse list of songs to JSON and set JSON as entity of response
         Gson gson = new GsonBuilder()
         .excludeFieldsWithoutExposeAnnotation()
@@ -242,6 +254,9 @@ public class SongResource {
         
         //set song details
         listOfSongs = setDetailsForSongs(listOfSongs) ;
+        
+        //sort the list
+        listOfSongs.sort(null) ;
         
         //parse list of songs to JSON and set JSON as entity of response
         Gson gson = new GsonBuilder()

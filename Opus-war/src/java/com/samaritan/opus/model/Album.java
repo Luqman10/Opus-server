@@ -6,6 +6,7 @@
 package com.samaritan.opus.model;
 
 import com.google.gson.annotations.Expose;
+import java.util.Date;
 import java.util.Objects;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -16,6 +17,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
 
 /**
  * represents an album
@@ -23,7 +25,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "album", schema = "opus")
-public class Album {
+public class Album implements Comparable<Album>{
     
     //data fields
     @Expose(serialize = true, deserialize = true)
@@ -61,8 +63,12 @@ public class Album {
     @Expose(serialize = true, deserialize = true)
     @Column(name = "number_of_songs", nullable = false)
     private Long numberOfSongs ;
-
     
+    @Expose(serialize = true, deserialize = true)
+    @Column(name = "date_released", nullable = false)
+    @Temporal(javax.persistence.TemporalType.DATE)
+    private Date dateReleased ;
+ 
     public Integer getId() {
         return id;
     }
@@ -128,6 +134,14 @@ public class Album {
         this.numberOfSongs = numberOfSongs;
     }
     
+    public Date getDateReleased() {
+        return dateReleased;
+    }
+
+    public void setDateReleased(Date dateReleased) {
+        this.dateReleased = dateReleased;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -140,13 +154,23 @@ public class Album {
                 Objects.equals(price, that.price) &&
                 Objects.equals(sellAlbumOnly, that.sellAlbumOnly) &&
                 Objects.equals(albumCover, that.albumCover) &&
-                Objects.equals(numberOfSongs, that.numberOfSongs)
+                Objects.equals(numberOfSongs, that.numberOfSongs) &&
+                Objects.equals(dateReleased, that.dateReleased)
                 ;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id,name,artiste,genre,price,sellAlbumOnly,albumCover,numberOfSongs) ;
+        return Objects.hash(id,name,artiste,genre,price,sellAlbumOnly,albumCover,numberOfSongs,dateReleased) ;
+    }
+
+    @Override
+    public int compareTo(Album album) {
+        
+        //compareTo method of Date, returns a positive value when the date param is greater than the date instance on which
+        //compareTo() is called. since we want latest albums to appear before older albums, we reverse that behaviour by 
+        //multiplying the returned value by -1.
+        return -1 * dateReleased.compareTo(album.getDateReleased()) ;
     }
     
     

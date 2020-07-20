@@ -63,6 +63,9 @@ public class SeriesResource {
         //set the base64 representation of each series' poster image
         listOfSeries = setPosterImageForSeries(listOfSeries) ;
             
+        //sort list
+        listOfSeries.sort(null) ;
+        
         //if a match was found, send status code 200
         //parse list of docs to JSON and set JSON as entity of response
         Gson gson = new GsonBuilder()
@@ -124,6 +127,9 @@ public class SeriesResource {
         //set the base64 representation of each series' poster image
         listOfSeries = setPosterImageForSeries(listOfSeries) ;
             
+        //sort list
+        listOfSeries.sort(null) ;
+        
         //parse list of docs to JSON and set JSON as entity of response
         Gson gson = new GsonBuilder()
         .excludeFieldsWithoutExposeAnnotation()
@@ -170,6 +176,9 @@ public class SeriesResource {
         
         //set details for each series in the list
         listOfSeriesRecommendations = setPosterImageForSeries(listOfSeriesRecommendations) ;
+        
+        //sort list
+        listOfSeriesRecommendations.sort(null) ;
         
         return listOfSeriesRecommendations ;
     }

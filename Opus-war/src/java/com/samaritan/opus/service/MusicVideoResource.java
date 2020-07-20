@@ -64,6 +64,9 @@ public class MusicVideoResource {
         //set poster image for each music video
         listOfMusicVideos = setPosterImageForMusicVideos(listOfMusicVideos) ;
             
+        //sort list
+        listOfMusicVideos.sort(null) ;
+        
         //if a match was found, send status code 200
         //parse list of music videos to JSON and set JSON as entity of response
         Gson gson = new GsonBuilder()
@@ -96,6 +99,9 @@ public class MusicVideoResource {
         //set poster image for each music video
         listOfMusicVideos = setPosterImageForMusicVideos(listOfMusicVideos) ;
          
+        //sort list
+        listOfMusicVideos.sort(null) ;
+        
         //if a match was found, send status code 200
         //parse list of music videos to JSON and set JSON as entity of response
         Gson gson = new GsonBuilder()
@@ -159,6 +165,9 @@ public class MusicVideoResource {
         //set poster image for each music video
         listOfMusicVideos = setPosterImageForMusicVideos(listOfMusicVideos) ;
          
+        //sort list
+        listOfMusicVideos.sort(null) ;
+        
         //parse list of music videos to JSON and set JSON as entity of response
         Gson gson = new GsonBuilder()
         .excludeFieldsWithoutExposeAnnotation()
@@ -239,6 +248,9 @@ public class MusicVideoResource {
         
         //set details for each music video in the list
         listOfMusicVideoRecommendations = setPosterImageForMusicVideos(listOfMusicVideoRecommendations) ;
+        
+        //sort list
+        listOfMusicVideoRecommendations.sort(null) ;
         
         return listOfMusicVideoRecommendations ;
     }

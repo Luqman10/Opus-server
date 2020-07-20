@@ -63,6 +63,9 @@ public class DocumentaryResource {
         //set the base64 representation of each doc's poster image
         listOfDocumentaries = setPosterImageForDocumentaries(listOfDocumentaries) ;
             
+        //sort list
+        listOfDocumentaries.sort(null) ;
+        
         //send http status code 200
         //parse list of docs to JSON and set JSON as entity of response
         Gson gson = new GsonBuilder()
@@ -123,6 +126,9 @@ public class DocumentaryResource {
         //set the base64 representation of each doc's poster image
         listOfDocumentaries = setPosterImageForDocumentaries(listOfDocumentaries) ;
             
+        //sort list
+        listOfDocumentaries.sort(null) ;
+        
         //send http status code 200
         //parse list of docs to JSON and set JSON as entity of response
         Gson gson = new GsonBuilder()
@@ -199,6 +205,9 @@ public class DocumentaryResource {
         
         //set details for each movie in the list
         listOfDocumentaryRecommendations = setPosterImageForDocumentaries(listOfDocumentaryRecommendations) ;
+        
+        //sort list
+        listOfDocumentaryRecommendations.sort(null) ;
         
         return listOfDocumentaryRecommendations ;
     }

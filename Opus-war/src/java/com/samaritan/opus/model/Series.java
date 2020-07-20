@@ -25,7 +25,7 @@ import javax.persistence.Temporal;
  */
 @Entity
 @Table(name = "series", schema = "opus")
-public class Series {
+public class Series implements Comparable<Series>{
     
     //data fields
     @Expose(serialize = true, deserialize = true)
@@ -182,6 +182,15 @@ public class Series {
     @Override
     public int hashCode() {
         return Objects.hash(id,title,videoProducer,videoCategory,price,dateReleased,posterImage,sample,description) ;
+    }
+
+    @Override
+    public int compareTo(Series series) {
+        
+        //compareTo method of Date, returns a positive value when the date param is greater than the date instance on which
+        //compareTo() is called. since we want latest series to appear before older series, we reverse that behaviour by 
+        //multiplying the returned value by -1.
+        return -1 * dateReleased.compareTo(series.getDateReleased()) ;
     }
     
     

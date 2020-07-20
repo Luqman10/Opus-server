@@ -26,6 +26,8 @@
         
         <property name="numberOfSongs" column="number_of_songs"/>
         
+        <property name="dateReleased" column="date_released"/>
+        
     </class>
     
 </hibernate-mapping>

@@ -26,7 +26,7 @@ import javax.persistence.Temporal;
  */
 @Entity
 @Table(name = "documentary", schema = "opus")
-public class Documentary implements Serializable {
+public class Documentary implements Serializable,Comparable<Documentary> {
     
     //data fields
     @Expose(serialize = true, deserialize = true)
@@ -182,6 +182,16 @@ public class Documentary implements Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(id,title,videoProducer,videoCategory,price,dateReleased,posterImage,sample,description) ;
+    }
+
+    @Override
+    public int compareTo(Documentary doc) {
+        
+        //compareTo method of Date, returns a positive value when the date param is greater than the date instance on which
+        //compareTo() is called. since we want latest docs to appear before older docs, we reverse that behaviour by 
+        //multiplying the returned value by -1.
+        return -1 * dateReleased.compareTo(doc.getDateReleased()) ;
+        
     }
     
     

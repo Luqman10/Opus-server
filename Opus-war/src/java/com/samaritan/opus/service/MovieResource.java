@@ -64,6 +64,9 @@ public class MovieResource {
         //set the base64 representation of each movie's poster image
         listOfMovies = setPosterImageForMovies(listOfMovies) ;
             
+        //sort list
+        listOfMovies.sort(null) ;
+        
         //send status code 200
         //parse list of movies to JSON and set JSON as entity of response
         Gson gson = new GsonBuilder()
@@ -125,6 +128,9 @@ public class MovieResource {
         //set the base64 representation of each movie's poster image
         listOfMovies = setPosterImageForMovies(listOfMovies) ;
             
+        //sort list
+        listOfMovies.sort(null) ;
+        
         //send status code 200
         //parse list of movies to JSON and set JSON as entity of response
         Gson gson = new GsonBuilder()
@@ -202,6 +208,9 @@ public class MovieResource {
         
         //set details for each movie in the list
         listOfMovieRecommendations = setPosterImageForMovies(listOfMovieRecommendations) ;
+        
+        //sort list
+        listOfMovieRecommendations.sort(null) ;
         
         return listOfMovieRecommendations ;
     }

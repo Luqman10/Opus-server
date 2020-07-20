@@ -59,6 +59,9 @@ public class AlbumResource {
         //set the details for each album in the list
         listOfAlbums = setDetailsForAlbums(listOfAlbums) ;
         
+        //sort list
+        listOfAlbums.sort(null) ;
+        
         //parse list of albums to JSON and set JSON as entity of response
             Gson gson = new GsonBuilder()
             .excludeFieldsWithoutExposeAnnotation()
@@ -95,6 +98,9 @@ public class AlbumResource {
         //set the details of each album in the list
         listOfAlbums = setDetailsForAlbums(listOfAlbums) ;
             
+        //sort list
+        listOfAlbums.sort(null) ;
+        
         //if a match was found, send status code 200
         //parse list of artistes to JSON and set JSON as entity of response
         Gson gson = new GsonBuilder()

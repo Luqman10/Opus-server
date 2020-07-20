@@ -25,7 +25,7 @@ import javax.persistence.Temporal;
  */
 @Entity
 @Table(name = "song", schema = "opus")
-public class Song {
+public class Song implements Comparable<Song>{
     
     //data fields
     @Expose(serialize = true, deserialize = true)
@@ -176,6 +176,15 @@ public class Song {
     @Override
     public int hashCode() {
         return Objects.hash(id,title,artiste,album,genre,price,dateReleased,isSongSoldAsSingle,posterImage,sample) ;
+    }
+
+    @Override
+    public int compareTo(Song song) {
+        
+        //compareTo method of Date, returns a positive value when the date param is greater than the date instance on which
+        //compareTo() is called. since we want latest songs to appear before older songs, we reverse that behaviour by 
+        //multiplying the returned value by -1.
+        return -1 * dateReleased.compareTo(song.getDateReleased()) ;
     }
     
     
