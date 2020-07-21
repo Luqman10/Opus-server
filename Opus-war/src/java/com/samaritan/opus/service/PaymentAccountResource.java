@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.samaritan.opus.application.OpusApplication;
 import com.samaritan.opus.model.PaymentAccount;
+import com.samaritan.opus.model.ProfileAccount;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import com.samaritan.opus.response.GenericResponse;
@@ -103,24 +104,42 @@ public class PaymentAccountResource{
      * update a payment account's phone number
      * @param id the payment account (to be updated) id
      * @param updatedPhoneNumber the updated phone number
+     * @param profileAccountId
      * @return response
      */
     @PUT
     @Produces("application/json")
-    public Response updatePhoneNumber(@QueryParam("id") int id, @QueryParam("phoneNumber") String updatedPhoneNumber){
+    public Response updatePhoneNumber(@QueryParam("id") int id, @QueryParam("phoneNumber") String updatedPhoneNumber,
+            @QueryParam("profileAccountId") int profileAccountId){
         
         Response.ResponseBuilder responseBuilder = null ;
         
         try{
             
             //update the payment account's phone number
-            if(updatePaymentAccountPhoneNumber(id,updatedPhoneNumber)){
+            int affectedRows = updatePaymentAccountPhoneNumber(id,updatedPhoneNumber) ;
+            //1 means number updated
+            if(affectedRows == 1){
             
                 logger.log(Level.INFO, "phone number of payment account with ID: " + id + " has been " + "updated to " 
                         + updatedPhoneNumber) ;
                 responseBuilder = Response.ok() ;
                 responseBuilder.entity(createGenericJsonResponse("your mobile money number has been updated successfully")) ;
             
+            }
+            //0 means there's no payment account with that id, so save payment account in DB
+            else if(affectedRows == 0){
+                
+                ProfileAccount profileAccount = new ProfileAccount() ;
+                profileAccount.setId(profileAccountId) ;
+                
+                PaymentAccount paymentAccount = new PaymentAccount() ;
+                paymentAccount.setProfileAccount(profileAccount) ;
+                paymentAccount.setPhoneNumber(updatedPhoneNumber) ;
+                savePaymentAccountInDB(paymentAccount) ;
+                
+                responseBuilder = Response.ok() ;
+                responseBuilder.entity(createGenericJsonResponse("your mobile money number has been updated successfully")) ;
             }
             else{
             
@@ -170,9 +189,9 @@ public class PaymentAccountResource{
      * update a payment account's phone number
      * @param id the payment account's id
      * @param updatedPhoneNumber the new phone number
-     * @return true if the update was successful
+     * @return the number of affected rows
      */
-    private boolean updatePaymentAccountPhoneNumber(int id, String updatedPhoneNumber) throws HibernateException{
+    private int updatePaymentAccountPhoneNumber(int id, String updatedPhoneNumber) throws HibernateException{
 
         SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
         Session session = sessionFactory.openSession() ;
@@ -197,7 +216,7 @@ public class PaymentAccountResource{
             session.close() ;
         }
         
-        return success > 0 ;
+        return success ;
     }
     
     /**

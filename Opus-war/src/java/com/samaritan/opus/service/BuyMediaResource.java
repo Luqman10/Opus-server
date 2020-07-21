@@ -74,7 +74,7 @@ public class BuyMediaResource {
     @Consumes("application/json")
     @Produces("application/json")
     public Response buyMedia(@PathParam("mediaType") String mediaType, @QueryParam("profileAccountId") int profileAccountId,
-            @QueryParam("momoNumber") String momoNumber ,String listOfMediaIdInJson){
+            @QueryParam("paymentAccountId") int paymentAccountId ,String listOfMediaIdInJson){
         
         //to build response
         Response.ResponseBuilder responseBuilder ;
@@ -99,7 +99,7 @@ public class BuyMediaResource {
             if(totalCost > 0){
                 
                 //make request to momo server for purchase and proceed if it was successful
-                if(makePurchaseRequestToMomoServer(totalCost, momoNumber)){
+                if(makePurchaseRequestToMomoServer(totalCost, paymentAccountId)){
                     
                     //add all the media download in the request body to the appropriate download table. this will make sure
                     //the user doesn't pay the next time he/she decides to buy the same media
@@ -110,7 +110,7 @@ public class BuyMediaResource {
                     //if all the media download couldn't be added to the download table, 
                     //send the user's money back to him.
                     else{
-                        makePaymentRequestToMomoServer(totalCost, momoNumber) ;
+                        makePaymentRequestToMomoServer(totalCost, paymentAccountId) ;
                         //send a 500 server error
                         responseBuilder = Response.serverError() ;
                     }
@@ -301,10 +301,10 @@ public class BuyMediaResource {
     /**
      * make an HTTP request to the momo server to receive payment from user for the media purchase
      * @param totalCost
-     * @param momoNumber
+     * @param paymentAccountId
      * @return 
      */
-    private boolean makePurchaseRequestToMomoServer(double totalCost, String momoNumber){
+    private boolean makePurchaseRequestToMomoServer(double totalCost, int paymentAccountId){
         
         return true ;
     }
@@ -441,9 +441,9 @@ public class BuyMediaResource {
      * make payment to the user's momo number. this will be called in case the media the user bought couldn't be added
      * to the download table
      * @param totalCost
-     * @param momoNumber 
+     * @param paymentAccountId
      */
-    private void makePaymentRequestToMomoServer(double totalCost, String momoNumber){
+    private void makePaymentRequestToMomoServer(double totalCost, int paymentAccountId){
         
         
     }
