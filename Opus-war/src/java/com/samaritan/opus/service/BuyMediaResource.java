@@ -106,6 +106,7 @@ public class BuyMediaResource {
                     if(addAllMediaToDownloadTable(mediaType, profileAccountId, mediaIds)){
                         //send a 200
                         responseBuilder = Response.ok() ;
+                        responseBuilder.entity(createGenericJsonResponse("your purchase was successful")) ;
                     }
                     //if all the media download couldn't be added to the download table, 
                     //send the user's money back to him.
@@ -113,16 +114,25 @@ public class BuyMediaResource {
                         makePaymentRequestToMomoServer(totalCost, paymentAccountId) ;
                         //send a 500 server error
                         responseBuilder = Response.serverError() ;
+                        responseBuilder.entity(createGenericJsonResponse("an unexpected error occured. please try again.")) ;
                     }
                     
                 }
                 //send a 402(payment required)
-                else
+                else{
+                    
                     responseBuilder = Response.status(Response.Status.PAYMENT_REQUIRED) ;
+                    responseBuilder.entity(createGenericJsonResponse("your purchase was unsuccessful. "
+                            + "you may have insufficient funds in your mobile money wallet.")) ;
+                
+                }
             }
             //if total cost is 0, it means all the media in the request body has been bought before so return a 200
-            else 
+            else{
+                
                 responseBuilder = Response.ok() ;
+                responseBuilder.entity(createGenericJsonResponse("your purchase was successful")) ;
+            }
         }
         
         return responseBuilder.build() ;
