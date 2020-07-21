@@ -23,7 +23,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "series_download", schema = "opus")
-public class SeriesDownload implements Serializable {
+public class SeriesDownload implements Serializable,OpusMediaDownload {
     
     @Expose(serialize = true, deserialize = true)
     @Id
@@ -79,5 +79,6 @@ public class SeriesDownload implements Serializable {
     public int hashCode() {
         return Objects.hash(id,profileAccount,series) ;
     }
+
     
 }

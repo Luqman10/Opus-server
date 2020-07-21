@@ -25,7 +25,7 @@ import javax.persistence.Temporal;
  */
 @Entity
 @Table(name = "music_video", schema = "opus")
-public class MusicVideo implements Comparable<MusicVideo>{
+public class MusicVideo extends OpusMedia implements Comparable<MusicVideo>{
     
     //data fields
     @Expose(serialize = true, deserialize = true)
@@ -97,10 +97,12 @@ public class MusicVideo implements Comparable<MusicVideo>{
         this.genre = genre;
     }
 
+    @Override
     public Double getPrice() {
         return price;
     }
 
+    @Override
     public void setPrice(Double price) {
         this.price = price;
     }

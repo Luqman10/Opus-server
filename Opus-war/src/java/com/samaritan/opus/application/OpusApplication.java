@@ -3,6 +3,7 @@ package com.samaritan.opus.application;
 import com.samaritan.opus.filter.OpusRequestFilter;
 import com.samaritan.opus.service.AlbumResource;
 import com.samaritan.opus.service.ArtisteResource;
+import com.samaritan.opus.service.BuyMediaResource;
 import com.samaritan.opus.service.DocumentaryResource;
 import com.samaritan.opus.service.FollowingResource;
 import com.samaritan.opus.service.MovieResource;
@@ -52,6 +53,7 @@ public class OpusApplication extends Application{
         hashSet.add(NotificationResource.class) ;
         hashSet.add(PropertiesResource.class) ;
         hashSet.add(OpusRequestFilter.class) ;
+        hashSet.add(BuyMediaResource.class) ;
         return hashSet ;
     }
     

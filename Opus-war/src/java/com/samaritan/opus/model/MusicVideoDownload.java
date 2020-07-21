@@ -22,7 +22,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "music_video_download", schema = "opus")
-public class MusicVideoDownload {
+public class MusicVideoDownload implements OpusMediaDownload{
     
     @Expose(serialize = true, deserialize = true)
     @Id
@@ -78,5 +78,6 @@ public class MusicVideoDownload {
     public int hashCode() {
         return Objects.hash(id,profileAccount,musicVideo) ;
     }
+
     
 }
