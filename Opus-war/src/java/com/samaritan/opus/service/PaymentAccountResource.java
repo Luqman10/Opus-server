@@ -124,7 +124,7 @@ public class PaymentAccountResource{
                 logger.log(Level.INFO, "phone number of payment account with ID: " + id + " has been " + "updated to " 
                         + updatedPhoneNumber) ;
                 responseBuilder = Response.ok() ;
-                responseBuilder.entity(createGenericJsonResponse("your mobile money number has been updated successfully")) ;
+                responseBuilder.entity(createUserAccountJsonResponse(id, updatedPhoneNumber)) ;
             
             }
             //0 means there's no payment account with that id, so save payment account in DB
@@ -139,7 +139,7 @@ public class PaymentAccountResource{
                 savePaymentAccountInDB(paymentAccount) ;
                 
                 responseBuilder = Response.ok() ;
-                responseBuilder.entity(createGenericJsonResponse("your mobile money number has been updated successfully")) ;
+                responseBuilder.entity(createUserAccountJsonResponse(paymentAccount.getId(), paymentAccount.getPhoneNumber())) ;
             }
             else{
             
