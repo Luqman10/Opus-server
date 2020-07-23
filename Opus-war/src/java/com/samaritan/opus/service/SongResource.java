@@ -185,6 +185,38 @@ public class SongResource {
     }
     
     /**
+     * get the data of a song sent to the client as a stream of bytes
+     * @param id the id of the song whose data is requested
+     * @return the song file (if exists) that will be written to the client as bytes incrementally / null if the 
+     * file doesn't exist
+     */
+    @Path("/data")
+    @GET
+    @Produces("audio/mpeg")
+    public File getSongData(@QueryParam("id") int id){
+        
+            
+        //get the song with the given id from DB
+        Song song = selectSongFromDB(id) ;
+
+        //proceed if there's a song with that id, it has a uri and the song file exixts
+        if(song != null && song.getUri() != null){
+
+            //create file using uri
+            File file = new File(song.getUri()) ;
+            
+            //return the file if it exists
+            if(file.exists())
+                return file ;
+
+        }
+        
+        //return null if any of the above conditions fail
+        return null ;
+        
+    }
+    
+    /**
      * get a list of song recommendations for a user that is based on the user's previous downloads
      * @param profileAccountId the user's id
      * @return response

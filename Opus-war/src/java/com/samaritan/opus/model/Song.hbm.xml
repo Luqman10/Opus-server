@@ -26,6 +26,8 @@
         
         <property name="sample" column="sample"/>
         
+        <property name="uri" column="uri"/>
+        
         <property name="dateReleased" column="date_released"/>
             
     </class>

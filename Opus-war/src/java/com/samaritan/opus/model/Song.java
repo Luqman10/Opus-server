@@ -64,6 +64,9 @@ public class Song extends OpusMedia implements Comparable<Song>{
     @Column(name = "sample", nullable = false, length = 200)
     private String sample ;
     
+    @Column(name = "uri", nullable = false, length = 200)
+    private String uri ;
+    
     @Expose(serialize = true, deserialize = true)
     @Column(name = "date_released", nullable = false)
     @Temporal(javax.persistence.TemporalType.DATE)
@@ -71,6 +74,7 @@ public class Song extends OpusMedia implements Comparable<Song>{
     
     @Expose(serialize = true, deserialize = true)
     private boolean isSongSoldAsSingle ;
+
  
     public Integer getId() {
         return id;
@@ -156,6 +160,14 @@ public class Song extends OpusMedia implements Comparable<Song>{
         this.sample = sample;
     }
     
+    public String getUri() {
+        return uri;
+    }
+
+    public void setUri(String uri) {
+        this.uri = uri;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -170,14 +182,15 @@ public class Song extends OpusMedia implements Comparable<Song>{
                 Objects.equals(dateReleased, that.dateReleased) &&
                 Objects.equals(isSongSoldAsSingle, that.isSongSoldAsSingle) &&
                 Objects.equals(posterImage, that.posterImage) &&
-                Objects.equals(sample, sample)
+                Objects.equals(sample, that.sample) &&
+                Objects.equals(uri, that.uri)
                 ;
                 
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id,title,artiste,album,genre,price,dateReleased,isSongSoldAsSingle,posterImage,sample) ;
+        return Objects.hash(id,title,artiste,album,genre,price,dateReleased,isSongSoldAsSingle,posterImage,sample,uri) ;
     }
 
     @Override
