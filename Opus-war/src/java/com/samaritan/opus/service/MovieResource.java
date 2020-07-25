@@ -113,6 +113,38 @@ public class MovieResource {
     }
     
     /**
+     * get the data of a movie sent to the client as a stream of bytes
+     * @param id the id of the movie whose data is requested
+     * @return the movie data file (if exists) that will be written to the client as bytes incrementally / null if the 
+     * file doesn't exist
+     */
+    @Path("/data")
+    @GET
+    @Produces("video/mp4")
+    public File getMovieData(@QueryParam("id") int id){
+        
+            
+        //get the movie with the given id from DB
+        Movie movie = selectMovieFromDB(id) ;
+
+        //proceed if there's a movie with that id, it has a uri and the movie file exists
+        if(movie != null && movie.getUri() != null){
+
+            //create file with the uri
+            File file = new File(movie.getUri()) ;
+            
+            //return the file if it exists
+            if(file.exists())
+                return file ;
+
+        }
+        
+        //return null if any of the above conditions fail
+        return null ;
+        
+    }
+    
+    /**
      * get all the movies in the DB
      * @return 
      */
