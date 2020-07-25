@@ -149,6 +149,39 @@ public class MusicVideoResource {
     }
     
     /**
+     * get the data of a music video sent to the client as a stream of bytes
+     * @param id the id of the music video whose data is requested
+     * @return the music video data file (if exists) that will be written to the client as bytes incrementally / null if the 
+     * file doesn't exist
+     */
+    @Path("/data")
+    @GET
+    @Produces("video/mp4")
+    public File getMusicVideoData(@QueryParam("id") int id){
+        
+            
+        //get the music video with the given id from DB
+        MusicVideo musicVideo = selectMusicVideoFromDB(id) ;
+
+        //proceed if there's a music video with that id, it has a uri and the music video file exists
+        if(musicVideo != null && musicVideo.getUri() != null){
+
+            //create file with the uri
+            File file = new File(musicVideo.getUri()) ;
+            
+            //return the file if it exists
+            if(file.exists())
+                return file ;
+
+        }
+        
+        //return null if any of the above conditions fail
+        return null ;
+        
+    }
+    
+    
+    /**
      * get all music videos
      * @return response with music video list as entity
      */

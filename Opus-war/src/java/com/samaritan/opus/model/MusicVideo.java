@@ -55,6 +55,9 @@ public class MusicVideo extends OpusMedia implements Comparable<MusicVideo>{
     @Column(name = "sample", nullable = false, length = 200)
     private String sample ;
     
+    @Column(name = "uri", nullable = false, length = 200)
+    private String uri ;
+    
     @Expose(serialize = true, deserialize = true)
     @Column(name = "poster_image", nullable = true, length = 200)
     private String posterImage ;
@@ -63,7 +66,6 @@ public class MusicVideo extends OpusMedia implements Comparable<MusicVideo>{
     @Column(name = "date_released", nullable = false)
     @Temporal(javax.persistence.TemporalType.DATE)
     private Date dateReleased ;
-
     
     public Integer getId() {
         return id;
@@ -115,6 +117,14 @@ public class MusicVideo extends OpusMedia implements Comparable<MusicVideo>{
         this.sample = sample;
     }
     
+    public String getUri() {
+        return uri;
+    }
+
+    public void setUri(String uri) {
+        this.uri = uri;
+    }
+    
 
     public String getPosterImage() {
         return posterImage;
@@ -145,13 +155,15 @@ public class MusicVideo extends OpusMedia implements Comparable<MusicVideo>{
                 Objects.equals(price, that.price) &&
                 Objects.equals(sample, that.sample) &&
                 Objects.equals(dateReleased, that.dateReleased) &&
-                Objects.equals(posterImage, that.posterImage) ;
+                Objects.equals(posterImage, that.posterImage) &&
+                Objects.equals(uri, that.uri)
+                ;
                 
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id,title,artiste,genre,price,sample,dateReleased,posterImage) ;
+        return Objects.hash(id,title,artiste,genre,price,sample,dateReleased,posterImage,uri) ;
     }
 
     @Override
