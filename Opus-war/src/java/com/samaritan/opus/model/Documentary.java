@@ -60,6 +60,9 @@ public class Documentary extends OpusMedia implements Serializable,Comparable<Do
     @Column(name = "sample", nullable = false, length = 200)
     private String sample ;
     
+    @Column(name = "uri", nullable = false, length = 200)
+    private String uri ;
+    
     @Expose(serialize = true, deserialize = true)
     @Column(name = "date_released", nullable = false)
     @Temporal(javax.persistence.TemporalType.DATE)
@@ -143,6 +146,14 @@ public class Documentary extends OpusMedia implements Serializable,Comparable<Do
     public void setSample(String sample) {
         this.sample = sample;
     }
+    
+    public String getUri() {
+        return uri;
+    }
+
+    public void setUri(String uri) {
+        this.uri = uri;
+    }
 
     public Date getDateReleased() {
         return dateReleased;
@@ -176,14 +187,15 @@ public class Documentary extends OpusMedia implements Serializable,Comparable<Do
                 Objects.equals(dateReleased, that.dateReleased) &&
                 Objects.equals(posterImage, that.posterImage) &&
                 Objects.equals(sample, that.sample) &&
-                Objects.equals(description, that.description)
+                Objects.equals(description, that.description) &&
+                Objects.equals(uri, that.uri)
                 ;
                 
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(id,title,videoProducer,videoCategory,price,dateReleased,posterImage,sample,description) ;
+        return Objects.hash(id,title,videoProducer,videoCategory,price,dateReleased,posterImage,sample,description,uri) ;
     }
 
     @Override

@@ -111,6 +111,40 @@ public class SeriesResource {
         
     }
     
+    
+    /**
+     * get the data of a series sent to the client as a stream of bytes
+     * @param id the id of the series whose data is requested
+     * @return the series data file (if exists) that will be written to the client as bytes incrementally / null if the 
+     * file doesn't exist
+     */
+    @Path("/data")
+    @GET
+    @Produces("video/mp4")
+    public File getSeriesData(@QueryParam("id") int id){
+        
+            
+        //get the series with the given id from DB
+        Series series = selectSeriesFromDB(id) ;
+
+        //proceed if there's a series with that id, it has a data and the series file exists
+        if(series != null && series.getUri() != null){
+
+            //create file for the sample
+            File file = new File(series.getUri()) ;
+            
+            //return the file if it exists
+            if(file.exists())
+                return file ;
+
+        }
+        
+        //return null if any of the above conditions fail
+        return null ;
+        
+    }
+    
+    
     /**
      * get all the series in the DB
      * @return 

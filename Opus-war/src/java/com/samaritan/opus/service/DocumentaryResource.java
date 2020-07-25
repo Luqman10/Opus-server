@@ -111,6 +111,39 @@ public class DocumentaryResource {
     }
     
     /**
+     * get the data of a documentary sent to the client as a stream of bytes
+     * @param id the id of the documentary whose data is requested
+     * @return the documentary data file (if exists) that will be written to the client as bytes incrementally / null if the 
+     * file doesn't exist
+     */
+    @Path("/data")
+    @GET
+    @Produces("video/mp4")
+    public File getDocumentaryData(@QueryParam("id") int id){
+        
+            
+        //get the documentary with the given id from DB
+        Documentary documentary = selectDocumentaryFromDB(id) ;
+
+        //proceed if there's a documentary with that id, it has a uri and the documentary file exists
+        if(documentary != null && documentary.getUri() != null){
+
+            //create file for the data
+            File file = new File(documentary.getUri()) ;
+            
+            //return the file if it exists
+            if(file.exists())
+                return file ;
+
+        }
+        
+        //return null if any of the above conditions fail
+        return null ;
+        
+    }
+    
+    
+    /**
      * get all the docs in the DB
      * @return 
      */
