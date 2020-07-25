@@ -327,14 +327,12 @@ public class BuyMediaResource {
      */
     private boolean addAllMediaToDownloadTable(String mediaType, int profileAccountId, List<Integer> mediaIds){
         
-        try{
-            for(Integer mediaId : mediaIds)  
-                saveMediaDownloadToDownloadTable(mediaType, profileAccountId, mediaId) ;
-        }
-        catch(ConstraintViolationException ex){
-            
-            return false ;
-        }
+            for(Integer mediaId : mediaIds){
+                
+                if(!saveMediaDownloadToDownloadTable(mediaType, profileAccountId, mediaId))
+                    return false ;
+            }
+        
         
         return true ;
         
@@ -346,8 +344,7 @@ public class BuyMediaResource {
      * @param profileAccountId
      * @param mediaId 
      */
-    private void saveMediaDownloadToDownloadTable(String mediaType, int profileAccountId, int mediaId) 
-            throws ConstraintViolationException{
+    private boolean saveMediaDownloadToDownloadTable(String mediaType, int profileAccountId, int mediaId){
         
         SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
         Session session = sessionFactory.openSession() ;
@@ -435,11 +432,16 @@ public class BuyMediaResource {
             session.save(opusMediaDownload) ;
             transaction.commit() ;
             logger.log(Level.INFO, "User with ID: " + profileAccountId + " has bought media with ID: " + mediaId) ;
+            return true ;
         }
         catch(ConstraintViolationException ex){
             
             if(transaction != null) transaction.rollback() ;
-            throw ex ;
+            return true ; //const violation ex simply means the user has bought the media before. thats all.
+        }
+        catch(Exception ex){
+            
+            return false ;
         }
         finally{
             
