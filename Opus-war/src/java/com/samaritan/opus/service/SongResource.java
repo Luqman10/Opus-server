@@ -9,9 +9,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.samaritan.opus.application.OpusApplication;
 import com.samaritan.opus.model.Song;
+import com.samaritan.opus.model.SongDownload;
 import com.samaritan.opus.util.Base64Util;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -302,6 +304,55 @@ public class SongResource {
         responseBuilder.entity(jsonString) ;
         return responseBuilder.build() ;
         
+    }
+    
+    /**
+     * get all the songs that the user owns(has already bought)
+     * @param profileAccountId the user's profile account id
+     * @return the HTTP response
+     */
+    @Path("/sync")
+    @GET
+    @Produces("application/json")
+    public Response getAllSongsOwnedByUser(@QueryParam("profileAccountId") int profileAccountId){
+        
+        //get the song downloads belonging to the user
+        List<SongDownload> songDownloadsBelongingToUser = selectAllSongDownloadsBelongingToUser(profileAccountId) ;
+        
+        //the list of songs the user owns
+        List<Song> listOfSongsUserOwns = new ArrayList<>() ;
+        
+        //add every song in the songs downloads list to the user's list
+        for(SongDownload songDownload : songDownloadsBelongingToUser)
+            listOfSongsUserOwns.add(songDownload.getSong()) ;
+        
+        //parse list of songs to JSON and set JSON as entity of response
+        Gson gson = new GsonBuilder()
+        .excludeFieldsWithoutExposeAnnotation()
+        .serializeNulls()
+        .create();
+        String jsonString = gson.toJson(listOfSongsUserOwns) ;
+            
+        //send response with 200 code
+        Response.ResponseBuilder responseBuilder = Response.ok() ;
+        responseBuilder.entity(jsonString) ;
+        return responseBuilder.build() ;
+    }
+    
+    /**
+     * select all the song downloads owned by the user
+     * @param profileAccountId the user's profile account id
+     * @return the result set
+     */
+    private List<SongDownload> selectAllSongDownloadsBelongingToUser(int profileAccountId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query<SongDownload> query = session.createQuery("FROM SongDownload sd JOIN FETCH sd.song JOIN FETCH sd.profileAccount WHERE sd.profileAccount.id=:profileAccountId", SongDownload.class) ;
+        query.setParameter("profileAccountId", profileAccountId) ;
+        List<SongDownload> listOfSongDownloads = query.getResultList() ;
+        session.close() ;
+        return listOfSongDownloads ;
     }
     
     /**
