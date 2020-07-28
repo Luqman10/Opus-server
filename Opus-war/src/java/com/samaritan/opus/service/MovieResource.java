@@ -9,9 +9,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.samaritan.opus.application.OpusApplication;
 import com.samaritan.opus.model.Movie;
+import com.samaritan.opus.model.MovieDownload;
 import com.samaritan.opus.util.Base64Util;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -175,6 +177,57 @@ public class MovieResource {
             
         return responseBuilder.build() ;
     }
+    
+    /**
+     * get all the mvs that the user owns(has already bought)
+     * @param profileAccountId the user's profile account id
+     * @return the HTTP response
+     */
+    @Path("/sync")
+    @GET
+    @Produces("application/json")
+    public Response getAllMoviesOwnedByUser(@QueryParam("profileAccountId") int profileAccountId){
+        
+        //get the mv downloads belonging to the user
+        List<MovieDownload> movieDownloadsBelongingToUser = selectAllMovieDownloadsBelongingToUser(profileAccountId) ;
+        
+        //the list of mvs the user owns
+        List<Movie> listOfMoviesUserOwns = new ArrayList<>() ;
+        
+        //add every mv in the mvs downloads list to the user's list
+        for(MovieDownload movieDownload : movieDownloadsBelongingToUser)
+            listOfMoviesUserOwns.add(movieDownload.getMovie()) ;
+        
+        //parse list of mvs to JSON and set JSON as entity of response
+        Gson gson = new GsonBuilder()
+        .excludeFieldsWithoutExposeAnnotation()
+        .serializeNulls()
+        .create();
+        String jsonString = gson.toJson(listOfMoviesUserOwns) ;
+            
+        //send response with 200 code
+        Response.ResponseBuilder responseBuilder = Response.ok() ;
+        responseBuilder.entity(jsonString) ;
+        return responseBuilder.build() ;
+    }
+    
+    
+    /**
+     * select all the mv downloads owned by the user
+     * @param profileAccountId the user's profile account id
+     * @return the result set
+     */
+    private List<MovieDownload> selectAllMovieDownloadsBelongingToUser(int profileAccountId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query<MovieDownload> query = session.createQuery("FROM MovieDownload md JOIN FETCH md.movie JOIN FETCH md.profileAccount WHERE md.profileAccount.id=:profileAccountId", MovieDownload.class) ;
+        query.setParameter("profileAccountId", profileAccountId) ;
+        List<MovieDownload> listOfMovieDownloads = query.getResultList() ;
+        session.close() ;
+        return listOfMovieDownloads ;
+    }
+    
     
     /**
      * set the base 64 representation of each movie in the list
