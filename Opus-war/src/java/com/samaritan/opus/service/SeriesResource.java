@@ -9,9 +9,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.samaritan.opus.application.OpusApplication;
 import com.samaritan.opus.model.Series;
+import com.samaritan.opus.model.SeriesDownload;
 import com.samaritan.opus.util.Base64Util;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -175,6 +177,57 @@ public class SeriesResource {
         
         return responseBuilder.build() ;
     }
+    
+    /**
+     * get all the series that the user owns(has already bought)
+     * @param profileAccountId the user's profile account id
+     * @return the HTTP response
+     */
+    @Path("/sync")
+    @GET
+    @Produces("application/json")
+    public Response getAllSeriesOwnedByUser(@QueryParam("profileAccountId") int profileAccountId){
+        
+        //get the series downloads belonging to the user
+        List<SeriesDownload> seriesDownloadsBelongingToUser = selectAllSeriesDownloadsBelongingToUser(profileAccountId) ;
+        
+        //the list of series the user owns
+        List<Series> listOfSeriesUserOwns = new ArrayList<>() ;
+        
+        //add every series in the series downloads list to the user's list
+        for(SeriesDownload seriesDownload : seriesDownloadsBelongingToUser)
+            listOfSeriesUserOwns.add(seriesDownload.getSeries()) ;
+        
+        //parse list of series to JSON and set JSON as entity of response
+        Gson gson = new GsonBuilder()
+        .excludeFieldsWithoutExposeAnnotation()
+        .serializeNulls()
+        .create();
+        String jsonString = gson.toJson(listOfSeriesUserOwns) ;
+            
+        //send response with 200 code
+        Response.ResponseBuilder responseBuilder = Response.ok() ;
+        responseBuilder.entity(jsonString) ;
+        return responseBuilder.build() ;
+    }
+    
+    
+    /**
+     * select all the series downloads owned by the user
+     * @param profileAccountId the user's profile account id
+     * @return the result set
+     */
+    private List<SeriesDownload> selectAllSeriesDownloadsBelongingToUser(int profileAccountId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query<SeriesDownload> query = session.createQuery("FROM SeriesDownload sd JOIN FETCH sd.series JOIN FETCH sd.profileAccount WHERE sd.profileAccount.id=:profileAccountId", SeriesDownload.class) ;
+        query.setParameter("profileAccountId", profileAccountId) ;
+        List<SeriesDownload> listOfSeriesDownloads = query.getResultList() ;
+        session.close() ;
+        return listOfSeriesDownloads ;
+    }
+    
     
     /**
      * get a list of series recommendations based on a user's series download history
