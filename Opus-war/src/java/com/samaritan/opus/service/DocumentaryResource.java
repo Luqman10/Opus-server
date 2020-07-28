@@ -9,9 +9,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.samaritan.opus.application.OpusApplication;
 import com.samaritan.opus.model.Documentary;
+import com.samaritan.opus.model.DocumentaryDownload;
 import com.samaritan.opus.util.Base64Util;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -173,6 +175,58 @@ public class DocumentaryResource {
         responseBuilder.entity(jsonString) ;
         return responseBuilder.build() ;
     }
+    
+    
+    /**
+     * get all the docs that the user owns(has already bought)
+     * @param profileAccountId the user's profile account id
+     * @return the HTTP response
+     */
+    @Path("/sync")
+    @GET
+    @Produces("application/json")
+    public Response getAllDocsOwnedByUser(@QueryParam("profileAccountId") int profileAccountId){
+        
+        //get the doc downloads belonging to the user
+        List<DocumentaryDownload> docDownloadsBelongingToUser = selectAllDocDownloadsBelongingToUser(profileAccountId) ;
+        
+        //the list of docs the user owns
+        List<Documentary> listOfDocsUserOwns = new ArrayList<>() ;
+        
+        //add every doc in the docs downloads list to the user's list
+        for(DocumentaryDownload docDownload : docDownloadsBelongingToUser)
+            listOfDocsUserOwns.add(docDownload.getDocumentary()) ;
+        
+        //parse list of docs to JSON and set JSON as entity of response
+        Gson gson = new GsonBuilder()
+        .excludeFieldsWithoutExposeAnnotation()
+        .serializeNulls()
+        .create();
+        String jsonString = gson.toJson(listOfDocsUserOwns) ;
+            
+        //send response with 200 code
+        Response.ResponseBuilder responseBuilder = Response.ok() ;
+        responseBuilder.entity(jsonString) ;
+        return responseBuilder.build() ;
+    }
+    
+    
+    /**
+     * select all the doc downloads owned by the user
+     * @param profileAccountId the user's profile account id
+     * @return the result set
+     */
+    private List<DocumentaryDownload> selectAllDocDownloadsBelongingToUser(int profileAccountId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query<DocumentaryDownload> query = session.createQuery("FROM DocumentaryDownload dd JOIN FETCH dd.documentary JOIN FETCH dd.profileAccount WHERE dd.profileAccount.id=:profileAccountId", DocumentaryDownload.class) ;
+        query.setParameter("profileAccountId", profileAccountId) ;
+        List<DocumentaryDownload> listOfDocDownloads = query.getResultList() ;
+        session.close() ;
+        return listOfDocDownloads ;
+    }
+    
     
     /**
      * set the base 64 representation of each doc's poster image in the list
