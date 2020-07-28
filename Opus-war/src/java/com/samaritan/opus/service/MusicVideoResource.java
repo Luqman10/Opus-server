@@ -18,9 +18,11 @@ import javax.ws.rs.core.Response;
 import org.hibernate.Session;
 
 import com.samaritan.opus.model.MusicVideo ;
+import com.samaritan.opus.model.MusicVideoDownload;
 import com.samaritan.opus.util.Base64Util;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import javax.persistence.NoResultException;
 import javax.servlet.ServletContext;
@@ -211,6 +213,55 @@ public class MusicVideoResource {
         responseBuilder.entity(jsonString) ;
         
         return responseBuilder.build() ;
+    }
+    
+    /**
+     * get all the mvs that the user owns(has already bought)
+     * @param profileAccountId the user's profile account id
+     * @return the HTTP response
+     */
+    @Path("/sync")
+    @GET
+    @Produces("application/json")
+    public Response getAllMusicVideosOwnedByUser(@QueryParam("profileAccountId") int profileAccountId){
+        
+        //get the mv downloads belonging to the user
+        List<MusicVideoDownload> musicVideoDownloadsBelongingToUser = selectAllMusicVideoDownloadsBelongingToUser(profileAccountId) ;
+        
+        //the list of mvs the user owns
+        List<MusicVideo> listOfMusicVideosUserOwns = new ArrayList<>() ;
+        
+        //add every mv in the mvs downloads list to the user's list
+        for(MusicVideoDownload musicVideoDownload : musicVideoDownloadsBelongingToUser)
+            listOfMusicVideosUserOwns.add(musicVideoDownload.getMusicVideo()) ;
+        
+        //parse list of mvs to JSON and set JSON as entity of response
+        Gson gson = new GsonBuilder()
+        .excludeFieldsWithoutExposeAnnotation()
+        .serializeNulls()
+        .create();
+        String jsonString = gson.toJson(listOfMusicVideosUserOwns) ;
+            
+        //send response with 200 code
+        Response.ResponseBuilder responseBuilder = Response.ok() ;
+        responseBuilder.entity(jsonString) ;
+        return responseBuilder.build() ;
+    }
+    
+    /**
+     * select all the mv downloads owned by the user
+     * @param profileAccountId the user's profile account id
+     * @return the result set
+     */
+    private List<MusicVideoDownload> selectAllMusicVideoDownloadsBelongingToUser(int profileAccountId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query<MusicVideoDownload> query = session.createQuery("FROM MusicVideoDownload mvd JOIN FETCH mvd.musicVideo JOIN FETCH mvd.profileAccount WHERE mvd.profileAccount.id=:profileAccountId", MusicVideoDownload.class) ;
+        query.setParameter("profileAccountId", profileAccountId) ;
+        List<MusicVideoDownload> listOfMusicVideoDownloads = query.getResultList() ;
+        session.close() ;
+        return listOfMusicVideoDownloads ;
     }
     
     /**
