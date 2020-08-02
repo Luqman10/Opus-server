@@ -8,6 +8,7 @@ package com.samaritan.opus.service;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.samaritan.opus.application.OpusApplication;
+import com.samaritan.opus.model.AlbumDownload;
 import com.samaritan.opus.model.Song;
 import com.samaritan.opus.model.SongDownload;
 import com.samaritan.opus.util.Base64Util;
@@ -326,6 +327,9 @@ public class SongResource {
         for(SongDownload songDownload : songDownloadsBelongingToUser)
             listOfSongsUserOwns.add(songDownload.getSong()) ;
         
+        //add all songs in albums owned by the user
+        addAlbumSongsOwnedByUser(listOfSongsUserOwns, profileAccountId) ;
+        
         //parse list of songs to JSON and set JSON as entity of response
         Gson gson = new GsonBuilder()
         .excludeFieldsWithoutExposeAnnotation()
@@ -337,6 +341,26 @@ public class SongResource {
         Response.ResponseBuilder responseBuilder = Response.ok() ;
         responseBuilder.entity(jsonString) ;
         return responseBuilder.build() ;
+    }
+    
+    /**
+     * add all songs in albums that the user owns to the passed list of songs
+     * @param listOfSongsUserOwns the list of songs to add to.
+     * @param profileAccountId the user's profile account id
+     */
+    private void addAlbumSongsOwnedByUser(List<Song> listOfSongsUserOwns, int profileAccountId){
+        
+        //get albums belonging to user
+        List<AlbumDownload> ablumDownloadsBelongingToUser = selectAllAlbumDownloadsBelongingToUser(profileAccountId) ;
+        
+        //add songs in the albums user owns to the song list
+        for(AlbumDownload albumDownload : ablumDownloadsBelongingToUser){
+            
+            //get the albums songs
+            List<Song> songsInAlbum = selectSongsFromDBBelongingToAlbum(albumDownload.getAlbum().getId()) ;
+            //add songs to main list
+            listOfSongsUserOwns.addAll(songsInAlbum) ;
+        }
     }
     
     /**
@@ -353,6 +377,22 @@ public class SongResource {
         List<SongDownload> listOfSongDownloads = query.getResultList() ;
         session.close() ;
         return listOfSongDownloads ;
+    }
+    
+    /**
+     * select all the album downloads owned by the user
+     * @param profileAccountId the user's profile account id
+     * @return the result set
+     */
+    private List<AlbumDownload> selectAllAlbumDownloadsBelongingToUser(int profileAccountId){
+        
+        SessionFactory sessionFactory = (SessionFactory)servletContext.getAttribute(OpusApplication.HIBERNATE_SESSION_FACTORY) ;
+        Session session = sessionFactory.openSession() ;
+        Query<AlbumDownload> query = session.createQuery("FROM AlbumDownload ad JOIN FETCH ad.album JOIN FETCH ad.profileAccount WHERE ad.profileAccount.id=:profileAccountId", AlbumDownload.class) ;
+        query.setParameter("profileAccountId", profileAccountId) ;
+        List<AlbumDownload> listOfAlbumDownloads = query.getResultList() ;
+        session.close() ;
+        return listOfAlbumDownloads ;
     }
     
     /**
