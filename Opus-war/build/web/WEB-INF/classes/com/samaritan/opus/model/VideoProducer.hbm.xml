@@ -16,7 +16,7 @@
             
         <property name="lastName" column = "last_name"/>
             
-        <property name="bankAccountNumber" column = "bank_acc_number"/>
+        <property name="phoneNumber" column = "phone_number"/>
         
         <property name="companyName" column = "company_name"/>
             
