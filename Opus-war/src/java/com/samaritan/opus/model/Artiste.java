@@ -32,8 +32,8 @@ public class Artiste {
     @Column(name = "last_name", nullable = false, length = 30)
     private String lastName ;
     
-    @Column(name = "bank_acc_number", nullable = false, length = 18)
-    private String bankAccountNumber ;
+    @Column(name = "phone_number", nullable = false, length = 13)
+    private String phoneNumber ;
     
     @Expose(serialize = true, deserialize = true)
     @Column(name = "stage_name", nullable = false, length = 20)
@@ -58,13 +58,13 @@ public class Artiste {
     //constructor
     public Artiste(){}
     
-    public Artiste(Integer id, String firstName, String lastName, String bankAccountNumber,
+    public Artiste(Integer id, String firstName, String lastName, String phoneNumber,
             String stageName, String profilePicture, long numberOfSongs, long numberOfAlbums) {
         
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.bankAccountNumber = bankAccountNumber;
+        this.phoneNumber = phoneNumber;
         this.stageName = stageName;
         this.profilePicture = profilePicture;
         this.numberOfSongs = numberOfSongs;
@@ -89,9 +89,9 @@ public class Artiste {
         return lastName ;
     }
     
-    public String getBankAccountNumber(){
+    public String getPhoneNumber(){
         
-        return bankAccountNumber ;
+        return phoneNumber ;
     }
     
     public String getStageName(){
@@ -133,9 +133,9 @@ public class Artiste {
         this.lastName = lastName ;
     }
     
-    public void setBankAccountNumber(String bankAccountNumber){
+    public void setPhoneNumber(String phoneNumber){
         
-        this.bankAccountNumber = bankAccountNumber ;
+        this.phoneNumber = phoneNumber ;
     }
     
     public void setStageName(String stageName){
@@ -169,7 +169,7 @@ public class Artiste {
         return Objects.equals(id, that.id) &&
                 Objects.equals(firstName, that.firstName) &&
                 Objects.equals(lastName, that.lastName) &&
-                Objects.equals(bankAccountNumber, that.bankAccountNumber) &&
+                Objects.equals(phoneNumber, that.phoneNumber) &&
                 Objects.equals(stageName, that.stageName) &&
                 Objects.equals(profilePicture, that.profilePicture) &&
                 Objects.equals(isUserFollowingArtiste, that.isUserFollowingArtiste) &&
@@ -180,7 +180,7 @@ public class Artiste {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id,firstName,lastName,bankAccountNumber,stageName,profilePicture,isUserFollowingArtiste,
+        return Objects.hash(id,firstName,lastName,phoneNumber,stageName,profilePicture,isUserFollowingArtiste,
                 numberOfSongs,numberOfAlbums) ;
     }
     
